@@ -29,10 +29,12 @@ type BlogComment = {
   user_id: string;
   content: string;
   created_at: string;
-  profiles?: {
-    display_name: string | null;
-    username: string | null;
-  } | null;
+  profiles?:
+    | {
+        display_name: string | null;
+        username: string | null;
+      }[]
+    | null;
 };
 
 export default function MembersBlogPage() {
@@ -101,7 +103,7 @@ export default function MembersBlogPage() {
       return;
     }
 
-    setComments((data ?? []) as BlogComment[]);
+    setComments((data ?? []) as unknown as BlogComment[]);
     setCommentsLoading(false);
   }
 
@@ -297,16 +299,14 @@ export default function MembersBlogPage() {
 
               {selectedPost && (
                 <section className="rounded-[3rem] border border-white/50 bg-white/70 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.06)] backdrop-blur-2xl md:p-10">
-                  <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[#a9793d]">
-                        Member Discussion
-                      </p>
+                  <div className="mb-6">
+                    <p className="mb-2 text-sm font-bold uppercase tracking-[0.3em] text-[#a9793d]">
+                      Member Discussion
+                    </p>
 
-                      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                        {commentCountLabel}
-                      </p>
-                    </div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
+                      {commentCountLabel}
+                    </p>
                   </div>
 
                   <form onSubmit={postComment} className="mb-8">
@@ -326,12 +326,9 @@ export default function MembersBlogPage() {
                     <button
                       type="submit"
                       disabled={postingComment}
-                      className="group relative inline-flex overflow-hidden rounded-full border border-[#f4d7a1]/50 bg-[#a9793d]/70 px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_30px_rgba(0,0,0,0.15)] backdrop-blur-2xl transition duration-300 hover:scale-[1.02] hover:bg-[#8d6432]/80 disabled:opacity-60"
+                      className="rounded-full bg-[#a9793d] px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
                     >
-                      <span className="absolute inset-0 bg-gradient-to-br from-[#f4d7a1]/35 via-white/10 to-transparent opacity-80" />
-                      <span className="relative z-10">
-                        {postingComment ? "Posting..." : "Post Comment"}
-                      </span>
+                      {postingComment ? "Posting..." : "Post Comment"}
                     </button>
                   </form>
 
@@ -354,9 +351,11 @@ export default function MembersBlogPage() {
                   ) : (
                     <div className="space-y-5">
                       {comments.map((comment) => {
+                        const profile = comment.profiles?.[0];
+
                         const displayName =
-                          comment.profiles?.display_name ||
-                          comment.profiles?.username ||
+                          profile?.display_name ||
+                          profile?.username ||
                           "Stone Harbor Member";
 
                         const canDelete = comment.user_id === currentUserId;
