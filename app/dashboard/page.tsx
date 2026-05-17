@@ -45,13 +45,32 @@ type CoverImage = {
   created_at: string;
 };
 
+type DailyQuote = {
+  quote_text: string;
+  theme: string;
+  category: string | null;
+};
+
+function normalizeHealingStage(value: string | null | undefined) {
+  const stage = value?.trim().toLowerCase();
+
+  if (stage === "calm") return "Calm";
+  if (stage === "strength" || stage === "strenght") return "Strength";
+
+  return "Clarity";
+}
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [coverImages, setCoverImages] = useState<CoverImage[]>([]);
   const [currentCoverIndex, setCurrentCoverIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [introExpanded, setIntroExpanded] = useState(true);
   const [loading, setLoading] = useState(true);
+
+  const [dailyQuote, setDailyQuote] = useState<DailyQuote | null>(null);
+  const [quoteStage, setQuoteStage] = useState("Clarity");
 
   const activeCover = useMemo(() => {
     return (
@@ -60,6 +79,50 @@ export default function DashboardPage() {
   }, [coverImages, currentCoverIndex, profile?.cover_url]);
 
   const activeCoverDetails = coverImages[currentCoverIndex] || null;
+
+  async function loadDailyQuote(healingStageValue: string | null | undefined) {
+    const today = new Date().toISOString().split("T")[0];
+    const normalizedStage = normalizeHealingStage(healingStageValue);
+
+    setQuoteStage(normalizedStage);
+
+    const { data, error } = await supabase
+      .from("daily_quotes")
+      .select("quote_text, theme, category")
+      .eq("quote_date", today)
+      .eq("audience", "men")
+      .eq("theme", normalizedStage)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Daily quote error:", error.message);
+      setDailyQuote(null);
+      return;
+    }
+
+    if (data) {
+      setDailyQuote(data);
+      return;
+    }
+
+    const { data: fallbackQuote, error: fallbackError } = await supabase
+      .from("daily_quotes")
+      .select("quote_text, theme, category")
+      .eq("quote_date", today)
+      .eq("audience", "men")
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackError) {
+      console.error("Fallback quote error:", fallbackError.message);
+      setDailyQuote(null);
+      return;
+    }
+
+    setDailyQuote(fallbackQuote);
+  }
 
   async function checkUser() {
     const {
@@ -106,6 +169,7 @@ export default function DashboardPage() {
 
     setProfile(loadedProfile);
     await loadCoverImages(user.id, loadedProfile.cover_url);
+    await loadDailyQuote(loadedProfile.healing_stage);
     setLoading(false);
   }
 
@@ -246,7 +310,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mb-10 overflow-hidden rounded-none border border-stone-200 bg-[#f8f4ed] shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
+        <div className="mb-8 overflow-hidden rounded-none border border-stone-200 bg-[#f8f4ed] shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
           <div
             className="group relative h-64 bg-cover bg-center"
             style={{
@@ -312,7 +376,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="px-8 pb-8 pt-16">
-            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div className="grid gap-8 md:grid-cols-[1.05fr_auto_0.95fr] md:items-start">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
                   Member Home
@@ -341,78 +405,145 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                <a
-                  href="/welcome"
-                  className="rounded-none bg-[#a9793d] px-7 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[#8d6432]"
-                >
-                  Edit Profile
-                </a>
+              <div className="hidden w-px self-stretch bg-stone-200 md:block" />
 
-                <a
-                  href="/journal"
-                  className="rounded-none border border-stone-300 bg-white px-7 py-4 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
-                >
-                  Journal
-                </a>
+              <div className="border-t border-stone-200 pt-6 md:border-t-0 md:pt-0">
+                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+                  Perspective
+                </p>
+
+                <p className="text-base leading-relaxed text-stone-700 md:text-lg">
+                  {profile?.bio ||
+                    "Welcome to your private harbor. This is your space to rebuild, reflect, and reconnect with who you are becoming."}
+                </p>
               </div>
             </div>
-
-            <p className="mt-8 max-w-4xl border-t border-stone-200 pt-6 text-lg leading-relaxed text-stone-700 md:text-xl">
-              {profile?.bio ||
-                "Welcome to your private harbor. This is your space to rebuild, reflect, and reconnect with who you are becoming."}
-            </p>
           </div>
         </div>
 
-        <div className="mt-8 grid items-stretch gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-          <aside className="flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]">
-            <div className="mb-6 flex items-center justify-between">
+        <section className="mb-10">
+          <div className="rounded-none border border-stone-200 bg-gradient-to-br from-[#f8f4ed] via-[#f3efe7] to-[#efe8dc] px-6 py-7 shadow-[0_14px_40px_rgba(0,0,0,0.06)] md:px-10 md:py-8">
+            <div className="mx-auto max-w-5xl text-center">
+              <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.38em] text-[#a9793d]">
+                Today&apos;s Reflection
+              </p>
+
+              {dailyQuote ? (
+                <>
+                  <p
+                    className={`${serif.className} mx-auto max-w-[1100px] text-xl font-medium leading-[1.15] tracking-[-0.015em] text-stone-900 md:text-3xl xl:text-[2.65rem]`}
+                    style={{
+                      fontStyle: "italic",
+                      wordBreak: "keep-all",
+                    }}
+                  >
+                    “{dailyQuote.quote_text}”
+                  </p>
+
+                  <div className="mt-4 flex justify-center">
+                    <span className="border border-[#c4934e]/35 bg-white/50 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-[#a9793d] shadow-sm">
+                      {dailyQuote.theme}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p
+                    className={`${serif.className} mx-auto max-w-4xl text-xl font-medium leading-[1.15] tracking-[-0.015em] text-stone-900 md:text-3xl`}
+                    style={{
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Your reflection is being prepared.
+                  </p>
+
+                  <p className="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-stone-500">
+                    No active quote was found for today&apos;s {quoteStage}{" "}
+                    stage. Generate this week&apos;s reflections and refresh
+                    your harbor.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <div
+          className={`mt-8 grid items-stretch gap-8 ${
+            introExpanded ? "lg:grid-cols-[0.85fr_1.15fr]" : "lg:grid-cols-1"
+          }`}
+        >
+          <aside className="relative flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]">
+            <button
+              type="button"
+              onClick={() => setIntroExpanded((current) => !current)}
+              className="absolute right-5 top-5 text-2xl leading-none text-[#a9793d] transition hover:text-[#8d6432]"
+              aria-label={
+                introExpanded
+                  ? "Contract intro section"
+                  : "Expand intro section"
+              }
+              title={introExpanded ? "Contract intro" : "Expand intro"}
+            >
+              {introExpanded ? "⌃" : "⌄"}
+            </button>
+
+            <div className="mb-6 flex items-center justify-between pr-8">
               <h2
                 className={`${serif.className} text-4xl font-medium text-stone-900`}
               >
-                Intro
+                Anchor
               </h2>
-
-              <a
-                href="/welcome"
-                className="text-xs font-bold uppercase tracking-[0.22em] text-[#a9793d]"
-              >
-                Edit
-              </a>
             </div>
 
-            <div className="flex flex-1 flex-col divide-y divide-stone-200">
-              <AboutRow icon="⚑" label="Lives in" value={profile?.location} />
+            {introExpanded ? (
+              <div className="flex flex-1 flex-col divide-y divide-stone-200">
+                <AboutRow icon="⚑" label="Lives in" value={profile?.location} />
+                <AboutRow icon="◬" label="From" value={profile?.hometown} />
 
-              <AboutRow icon="◬" label="From" value={profile?.hometown} />
+                <AboutRow
+                  icon="⚒"
+                  label="Work"
+                  value={profile?.work_company_name || profile?.work}
+                  logoUrl={profile?.work_company_logo_url}
+                  domain={profile?.work_company_domain}
+                />
 
-              <AboutRow
-                icon="⚒"
-                label="Work"
-                value={profile?.work_company_name || profile?.work}
-                logoUrl={profile?.work_company_logo_url}
-                domain={profile?.work_company_domain}
-              />
+                <AboutRow
+                  icon="⌬"
+                  label="Education"
+                  value={profile?.education}
+                />
 
-              <AboutRow icon="⌬" label="Education" value={profile?.education} />
+                <AboutRow
+                  icon="⊹"
+                  label="Relationship"
+                  value={formatLabel(profile?.relationship_status)}
+                />
 
-              <AboutRow
-                icon="⊹"
-                label="Relationship"
-                value={formatLabel(profile?.relationship_status)}
-              />
-
-              <AboutRow icon="◎" label="Website" value={profile?.website} />
-
-              <AboutRow icon="⋄" label="Languages" value={profile?.languages} />
-
-              <AboutRow icon="✢" label="Interests" value={profile?.interests} />
-            </div>
+                <AboutRow icon="◎" label="Website" value={profile?.website} />
+                <AboutRow
+                  icon="⋄"
+                  label="Languages"
+                  value={profile?.languages}
+                />
+                <AboutRow
+                  icon="✢"
+                  label="Interests"
+                  value={profile?.interests}
+                />
+              </div>
+            ) : null}
           </aside>
 
           <section className="h-full">
-            <div className="grid h-full gap-6 md:grid-cols-2 md:grid-rows-2">
+            <div
+              className={`grid h-full gap-6 ${
+                introExpanded
+                  ? "md:grid-cols-2 md:grid-rows-2"
+                  : "md:grid-cols-2 xl:grid-cols-4"
+              }`}
+            >
               <DashboardCard
                 href="/journal"
                 label="Private"

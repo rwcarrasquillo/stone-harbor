@@ -713,7 +713,7 @@ export default function WelcomePage() {
               </div>
 
               <TextArea
-                label="Bio"
+                label="Perspective"
                 value={formData.bio}
                 onChange={(value) => setFormData({ ...formData, bio: value })}
                 placeholder="Rebuilding with clarity, strength, and purpose..."
