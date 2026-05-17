@@ -243,7 +243,7 @@ export default function DashboardPage() {
 
         <div className="mb-10 overflow-hidden rounded-none border border-stone-200 bg-[#f8f4ed] shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
           <div
-            className="relative h-64 bg-cover bg-center"
+            className="group relative h-64 bg-cover bg-center"
             style={{
               backgroundImage: activeCover
                 ? `url(${activeCover})`
@@ -251,14 +251,6 @@ export default function DashboardPage() {
             }}
           >
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
-
-            <a
-              href="/welcome"
-              onClick={(event) => event.stopPropagation()}
-              className="absolute right-5 top-5 cursor-pointer rounded-none border border-white/40 bg-white/30 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg backdrop-blur-xl transition hover:bg-white/45"
-            >
-              Upload Cover
-            </a>
 
             {coverImages.length > 1 && (
               <>
@@ -268,7 +260,7 @@ export default function DashboardPage() {
                     event.stopPropagation();
                     previousCover();
                   }}
-                  className="absolute left-5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-none border border-white/40 bg-white/25 text-2xl text-white backdrop-blur-xl transition hover:bg-white/40"
+                  className="absolute left-5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-white/20 bg-black/15 text-lg text-white/70 opacity-0 backdrop-blur-md transition duration-300 hover:bg-black/25 hover:text-white group-hover:opacity-100"
                   aria-label="Previous cover image"
                 >
                   ‹
@@ -280,7 +272,7 @@ export default function DashboardPage() {
                     event.stopPropagation();
                     nextCover();
                   }}
-                  className="absolute right-5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-none border border-white/40 bg-white/25 text-2xl text-white backdrop-blur-xl transition hover:bg-white/40"
+                  className="absolute right-5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-white/20 bg-black/15 text-lg text-white/70 opacity-0 backdrop-blur-md transition duration-300 hover:bg-black/25 hover:text-white group-hover:opacity-100"
                   aria-label="Next cover image"
                 >
                   ›
@@ -293,7 +285,7 @@ export default function DashboardPage() {
               className="absolute inset-0 cursor-pointer"
             />
 
-            <div className="absolute bottom-5 right-5 rounded-none border border-white/35 bg-white/25 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white backdrop-blur-xl">
+            <div className="absolute bottom-5 right-5 z-20 rounded-none border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70 opacity-0 backdrop-blur-md transition duration-300 group-hover:opacity-100">
               {coverImages.length > 0
                 ? `${currentCoverIndex + 1} of ${coverImages.length}`
                 : "No Cover History"}
@@ -314,24 +306,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="px-8 pb-8 pt-24">
+          <div className="px-8 pb-8 pt-10">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
-                  Member Home
-                </p>
-
                 <h1
                   className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-stone-900 md:text-7xl`}
                 >
                   {profile?.display_name || "Stone Harbor Member"}
                 </h1>
 
-                <p className="mt-2 text-sm font-bold uppercase tracking-[0.22em] text-stone-400">
+                <p className="mt-1 text-sm font-bold uppercase tracking-[0.22em] text-stone-400">
                   {profile?.username ? `@${profile.username}` : profile?.email}
                 </p>
 
-                <div className="mt-4 flex flex-wrap gap-x-3 gap-y-2 text-sm font-semibold text-stone-500">
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-2 text-sm font-semibold text-stone-500">
                   <span>{profile?.location || "Location not set"}</span>
                   <span>•</span>
                   <span className="capitalize">
@@ -368,8 +356,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-          <aside className="rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]">
+        <div className="mt-8 grid items-stretch gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+          <aside className="flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]">
             <div className="mb-6 flex items-center justify-between">
               <h2
                 className={`${serif.className} text-4xl font-medium text-stone-900`}
@@ -385,7 +373,7 @@ export default function DashboardPage() {
               </a>
             </div>
 
-            <div className="divide-y divide-stone-200">
+            <div className="flex flex-1 flex-col divide-y divide-stone-200">
               <AboutRow icon="⚑" label="Lives in" value={profile?.location} />
               <AboutRow icon="◬" label="From" value={profile?.hometown} />
               <AboutRow icon="⚒" label="Work" value={profile?.work} />
@@ -401,8 +389,8 @@ export default function DashboardPage() {
             </div>
           </aside>
 
-          <section>
-            <div className="grid gap-6 md:grid-cols-2">
+          <section className="h-full">
+            <div className="grid h-full gap-6 md:grid-cols-2 md:grid-rows-2">
               <DashboardCard
                 href="/journal"
                 label="Private"
@@ -556,7 +544,7 @@ function DashboardCard({
   return (
     <a
       href={href}
-      className="group rounded-none border border-white/70 bg-white p-7 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
+      className="group flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
     >
       <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
         {label}
@@ -566,7 +554,7 @@ function DashboardCard({
         {title}
       </h3>
 
-      <p className="mt-4 leading-relaxed text-stone-600">{text}</p>
+      <p className="mt-4 flex-1 leading-relaxed text-stone-600">{text}</p>
 
       <p className="mt-6 text-sm font-bold uppercase tracking-[0.2em] text-stone-400 transition group-hover:text-[#a9793d]">
         Open →

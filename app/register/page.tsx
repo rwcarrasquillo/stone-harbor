@@ -140,7 +140,7 @@ export default function RegisterPage() {
               {/* HEADER */}
               <div className="mb-12 flex items-start justify-between">
                 <h2 className="text-4xl font-light uppercase tracking-[0.55em] text-white">
-                  Register
+                  Join
                 </h2>
 
                 <Link

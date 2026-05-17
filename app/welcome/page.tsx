@@ -14,41 +14,130 @@ const sans = Inter({
   weight: ["400", "500", "600", "700"],
 });
 
+type CompanySuggestion = {
+  name: string;
+  domain: string;
+  logo: string;
+};
+
+type ProfileForm = {
+  email: string;
+  display_name: string;
+  username: string;
+  role: string;
+  bio: string;
+  location: string;
+  healing_stage: string;
+  privacy_level: string;
+  avatar_url: string;
+  cover_url: string;
+  work: string;
+  work_company_name: string;
+  work_company_logo_url: string;
+  work_company_domain: string;
+  education: string;
+  hometown: string;
+  relationship_status: string;
+  website: string;
+  languages: string;
+  interests: string;
+  favorite_quote: string;
+};
+
+const relationshipOptions = [
+  "Prefer not to say",
+  "Single",
+  "In a relationship",
+  "Married",
+  "Separated",
+  "Divorced",
+  "Widowed",
+  "Co-parenting",
+  "Complicated",
+  "Healing",
+  "Focused on myself",
+];
+
+const healingStageOptions = [
+  "Clarity",
+  "Rebuilding",
+  "Healing",
+  "Growing",
+  "Surviving",
+  "Thriving",
+];
+
+const privacyOptions = ["Private", "Members Only", "Friends Only", "Public"];
+
+const educationOptions = [
+  "Prefer not to say",
+  "High School",
+  "GED",
+  "Some College",
+  "Associate Degree",
+  "Bachelor’s Degree",
+  "Master’s Degree",
+  "MBA",
+  "Doctorate / PhD",
+  "Trade School",
+  "Technical Certification",
+  "Military Training",
+  "Self-Taught",
+  "Currently Studying",
+  "Other",
+];
+
 export default function WelcomePage() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
 
-  const [displayName, setDisplayName] = useState("");
-  const [username, setUsername] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [bio, setBio] = useState("");
-  const [location, setLocation] = useState("");
-  const [hometown, setHometown] = useState("");
-  const [website, setWebsite] = useState("");
-  const [phone, setPhone] = useState("");
-  const [birthday, setBirthday] = useState("");
-  const [gender, setGender] = useState("");
-  const [pronouns, setPronouns] = useState("");
-  const [relationshipStatus, setRelationshipStatus] = useState("");
-  const [work, setWork] = useState("");
-  const [education, setEducation] = useState("");
-  const [languages, setLanguages] = useState("");
-  const [interests, setInterests] = useState("");
-  const [favoriteQuote, setFavoriteQuote] = useState("");
-  const [healingStage, setHealingStage] = useState("clarity");
-  const [privacyLevel, setPrivacyLevel] = useState("private");
-
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [coverUrl, setCoverUrl] = useState("");
-
-  const [avatarUploading, setAvatarUploading] = useState(false);
-  const [coverUploading, setCoverUploading] = useState(false);
+  const [formData, setFormData] = useState<ProfileForm>({
+    email: "",
+    display_name: "",
+    username: "",
+    role: "member",
+    bio: "",
+    location: "",
+    healing_stage: "Clarity",
+    privacy_level: "Private",
+    avatar_url: "",
+    cover_url: "",
+    work: "",
+    work_company_name: "",
+    work_company_logo_url: "",
+    work_company_domain: "",
+    education: "Prefer not to say",
+    hometown: "",
+    relationship_status: "Prefer not to say",
+    website: "",
+    languages: "",
+    interests: "",
+    favorite_quote: "",
+  });
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [detectingLocation, setDetectingLocation] = useState(false);
 
-  async function loadProfile() {
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const [companySuggestions, setCompanySuggestions] = useState<
+    CompanySuggestion[]
+  >([]);
+  const [searchingCompanies, setSearchingCompanies] = useState(false);
+
+  const avatarPreview = avatarFile
+    ? URL.createObjectURL(avatarFile)
+    : formData.avatar_url;
+
+  const coverPreview = coverFile
+    ? URL.createObjectURL(coverFile)
+    : formData.cover_url;
+
+  async function checkUser() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -59,196 +148,287 @@ export default function WelcomePage() {
     }
 
     setUserId(user.id);
-    setEmail(user.email ?? "");
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select(
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote",
+      )
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (data) {
-      setDisplayName(data.display_name ?? "");
-      setUsername(data.username ?? "");
-      setFullName(data.full_name ?? "");
-      setBio(data.bio ?? "");
-      setLocation(data.location ?? "");
-      setHometown(data.hometown ?? "");
-      setWebsite(data.website ?? "");
-      setPhone(data.phone ?? "");
-      setBirthday(data.birthday ?? "");
-      setGender(data.gender ?? "");
-      setPronouns(data.pronouns ?? "");
-      setRelationshipStatus(data.relationship_status ?? "");
-      setWork(data.work ?? "");
-      setEducation(data.education ?? "");
-      setLanguages(data.languages ?? "");
-      setInterests(data.interests ?? "");
-      setFavoriteQuote(data.favorite_quote ?? "");
-      setHealingStage(data.healing_stage ?? "clarity");
-      setPrivacyLevel(data.privacy_level ?? "private");
-      setAvatarUrl(data.avatar_url ?? "");
-      setCoverUrl(data.cover_url ?? "");
+    if (error) {
+      alert(`Could not load profile: ${error.message}`);
     }
+
+    setFormData({
+      email: data?.email ?? user.email ?? "",
+      display_name: data?.display_name ?? "",
+      username: data?.username ?? "",
+      role: data?.role ?? "member",
+      bio: data?.bio ?? "",
+      location: data?.location ?? "",
+      healing_stage: data?.healing_stage ?? "Clarity",
+      privacy_level: data?.privacy_level ?? "Private",
+      avatar_url: data?.avatar_url ?? "",
+      cover_url: data?.cover_url ?? "",
+      work: data?.work ?? "",
+      work_company_name: data?.work_company_name ?? "",
+      work_company_logo_url: data?.work_company_logo_url ?? "",
+      work_company_domain: data?.work_company_domain ?? "",
+      education: data?.education ?? "Prefer not to say",
+      hometown: data?.hometown ?? "",
+      relationship_status: data?.relationship_status ?? "Prefer not to say",
+      website: data?.website ?? "",
+      languages: data?.languages ?? "",
+      interests: data?.interests ?? "",
+      favorite_quote: data?.favorite_quote ?? "",
+    });
 
     setLoading(false);
   }
 
-  async function uploadProfileImage(file: File, type: "avatar" | "cover") {
-    if (!userId) return null;
+  async function searchCompanies(query: string) {
+    setFormData((prev) => ({
+      ...prev,
+      work: query,
+      work_company_name: query,
+      work_company_logo_url: "",
+      work_company_domain: "",
+    }));
 
-    const fileExtension = file.name.split(".").pop()?.toLowerCase() || "png";
-    const filePath = `${userId}/${type}-${Date.now()}.${fileExtension}`;
+    if (query.trim().length < 2) {
+      setCompanySuggestions([]);
+      return;
+    }
+
+    setSearchingCompanies(true);
+
+    try {
+      const response = await fetch(
+        `https://autocomplete.clearbit.com/v1/companies/suggest?query=${encodeURIComponent(
+          query,
+        )}`,
+      );
+
+      if (!response.ok) {
+        setCompanySuggestions([]);
+        return;
+      }
+
+      const data = await response.json();
+      setCompanySuggestions(data ?? []);
+    } catch {
+      setCompanySuggestions([]);
+    } finally {
+      setSearchingCompanies(false);
+    }
+  }
+
+  function selectCompany(company: CompanySuggestion) {
+    setFormData((prev) => ({
+      ...prev,
+      work: company.name,
+      work_company_name: company.name,
+      work_company_logo_url: company.logo,
+      work_company_domain: company.domain,
+    }));
+
+    setCompanySuggestions([]);
+  }
+
+  async function useCurrentLocation() {
+    if (!navigator.geolocation) {
+      alert("Location services are not supported by this browser.");
+      return;
+    }
+
+    setDetectingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+          );
+
+          if (!response.ok) {
+            throw new Error("Reverse geocoding request failed.");
+          }
+
+          const data = await response.json();
+
+          const city =
+            data?.address?.city ||
+            data?.address?.town ||
+            data?.address?.village ||
+            data?.address?.hamlet ||
+            "";
+
+          const state = data?.address?.state || "";
+
+          const locationLabel =
+            city && state ? `${city}, ${state}` : city || state || "";
+
+          if (!locationLabel) {
+            alert("Could not determine your city from your coordinates.");
+            return;
+          }
+
+          setFormData((prev) => ({
+            ...prev,
+            location: locationLabel,
+          }));
+        } catch {
+          alert("Could not convert your coordinates into a city/state.");
+        } finally {
+          setDetectingLocation(false);
+        }
+      },
+      (error) => {
+        setDetectingLocation(false);
+
+        const code = error?.code;
+
+        if (code === 1) {
+          alert(
+            "Location permission was denied. Please allow location access in your browser.",
+          );
+        } else if (code === 2) {
+          alert("Your location is currently unavailable.");
+        } else if (code === 3) {
+          alert("Location request timed out. Please try again.");
+        } else {
+          alert("Could not detect your location.");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      },
+    );
+  }
+
+  async function uploadAvatar() {
+    if (!avatarFile || !userId) return formData.avatar_url;
+
+    setUploadingAvatar(true);
+
+    const fileExt = avatarFile.name.split(".").pop();
+    const filePath = `${userId}/avatar-${Date.now()}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from("profile-images")
-      .upload(filePath, file, {
+      .upload(filePath, avatarFile, {
         cacheControl: "3600",
         upsert: true,
       });
 
     if (error) {
-      setMessage(`${type} upload error: ${error.message}`);
-      return null;
+      setUploadingAvatar(false);
+      alert(`Avatar upload failed: ${error.message}`);
+      return formData.avatar_url;
     }
 
     const { data } = supabase.storage
       .from("profile-images")
       .getPublicUrl(filePath);
 
+    setUploadingAvatar(false);
     return data.publicUrl;
   }
 
-  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !userId) return;
+  async function uploadCover() {
+    if (!coverFile || !userId) return formData.cover_url;
 
-    setAvatarUploading(true);
-    setMessage("");
+    setUploadingCover(true);
 
-    const publicUrl = await uploadProfileImage(file, "avatar");
+    const fileExt = coverFile.name.split(".").pop();
+    const filePath = `${userId}/cover-${Date.now()}.${fileExt}`;
 
-    if (publicUrl) {
-      setAvatarUrl(publicUrl);
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          avatar_url: publicUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (error) {
-        setMessage(`Avatar save error: ${error.message}`);
-      } else {
-        setMessage("Avatar uploaded.");
-      }
-    }
-
-    setAvatarUploading(false);
-  }
-
-  async function handleCoverUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !userId) return;
-
-    setCoverUploading(true);
-    setMessage("");
-
-    const publicUrl = await uploadProfileImage(file, "cover");
-
-    if (publicUrl) {
-      setCoverUrl(publicUrl);
-
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          cover_url: publicUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", userId);
-
-      if (profileError) {
-        setMessage(`Cover save error: ${profileError.message}`);
-        setCoverUploading(false);
-        return;
-      }
-
-      await supabase.from("profile_cover_images").insert({
-        user_id: userId,
-        image_url: publicUrl,
-        caption: "Profile cover image",
+    const { error } = await supabase.storage
+      .from("profile-images")
+      .upload(filePath, coverFile, {
+        cacheControl: "3600",
+        upsert: true,
       });
 
-      setMessage("Cover image uploaded.");
+    if (error) {
+      setUploadingCover(false);
+      alert(`Cover upload failed: ${error.message}`);
+      return formData.cover_url;
     }
 
-    setCoverUploading(false);
+    const { data } = supabase.storage
+      .from("profile-images")
+      .getPublicUrl(filePath);
+
+    await supabase.from("profile_cover_images").insert({
+      user_id: userId,
+      image_url: data.publicUrl,
+      caption: "Profile Cover",
+    });
+
+    setUploadingCover(false);
+    return data.publicUrl;
   }
 
-  async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function saveProfile() {
     if (!userId) return;
 
     setSaving(true);
-    setMessage("");
 
-    const cleanUsername = username
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, "");
+    const avatarUrl = await uploadAvatar();
+    const coverUrl = await uploadCover();
 
     const { error } = await supabase.from("profiles").upsert({
       id: userId,
-      email,
-      display_name: displayName.trim() || null,
-      username: cleanUsername || null,
-      full_name: fullName.trim() || null,
-      bio: bio.trim() || null,
-      location: location.trim() || null,
-      hometown: hometown.trim() || null,
-      website: website.trim() || null,
-      phone: phone.trim() || null,
-      birthday: birthday || null,
-      gender: gender || null,
-      pronouns: pronouns.trim() || null,
-      relationship_status: relationshipStatus || null,
-      work: work.trim() || null,
-      education: education.trim() || null,
-      languages: languages.trim() || null,
-      interests: interests.trim() || null,
-      favorite_quote: favoriteQuote.trim() || null,
-      healing_stage: healingStage,
-      privacy_level: privacyLevel,
-      avatar_url: avatarUrl || null,
-      cover_url: coverUrl || null,
+      email: formData.email,
+      display_name: formData.display_name,
+      username: formData.username,
+      role: formData.role,
+      bio: formData.bio,
+      location: formData.location,
+      healing_stage: formData.healing_stage,
+      privacy_level: formData.privacy_level,
+      avatar_url: avatarUrl,
+      cover_url: coverUrl,
+      work: formData.work,
+      work_company_name: formData.work_company_name,
+      work_company_logo_url: formData.work_company_logo_url,
+      work_company_domain: formData.work_company_domain,
+      education: formData.education,
+      hometown: formData.hometown,
+      relationship_status: formData.relationship_status,
+      website: formData.website,
+      languages: formData.languages,
+      interests: formData.interests,
+      favorite_quote: formData.favorite_quote,
       updated_at: new Date().toISOString(),
     });
 
+    setSaving(false);
+
     if (error) {
-      setMessage(`Profile error: ${error.message}`);
-      setSaving(false);
+      alert(`Could not save profile: ${error.message}`);
       return;
     }
 
-    setMessage("Profile saved. Redirecting...");
-    setSaving(false);
-
-    setTimeout(() => {
-      window.location.href = "/dashboard";
-    }, 900);
+    window.location.href = "/dashboard";
   }
 
   useEffect(() => {
-    loadProfile();
+    checkUser();
   }, []);
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#f3efe7] text-stone-700">
-        <p className="text-sm font-bold uppercase tracking-[0.3em]">
-          Preparing Your Harbor...
+      <main className="flex min-h-screen items-center justify-center bg-[#f3efe7]">
+        <p className="text-sm font-bold uppercase tracking-[0.3em] text-stone-600">
+          Loading Profile...
         </p>
       </main>
     );
@@ -256,319 +436,469 @@ export default function WelcomePage() {
 
   return (
     <main
-      className={`${sans.className} min-h-screen bg-[#f3efe7] px-6 py-14 text-stone-900`}
+      className={`${sans.className} min-h-screen bg-[#f3efe7] px-4 py-8 text-stone-900 md:px-8`}
     >
-      <section className="mx-auto max-w-6xl">
-        <a
-          href="/dashboard"
-          className="mb-10 inline-block text-sm font-bold uppercase tracking-[0.3em] text-[#a9793d]"
-        >
-          ← Dashboard
-        </a>
-
-        <div className="mb-12">
-          <p className="mb-5 text-sm font-bold uppercase tracking-[0.4em] text-[#a9793d]">
-            Member Profile
-          </p>
-
-          <h1
-            className={`${serif.className} text-6xl font-medium leading-tight md:text-7xl`}
+      <section className="mx-auto max-w-5xl">
+        <div className="mb-8 flex items-center justify-between">
+          <a
+            href="/dashboard"
+            className="text-sm font-bold uppercase tracking-[0.35em] text-[#a9793d]"
           >
-            Build your Stone Harbor identity.
-          </h1>
-
-          <p className="mt-6 max-w-3xl text-lg leading-relaxed text-stone-600">
-            Add as much or as little as you want. Sensitive fields should stay
-            optional and private by default.
-          </p>
+            ← Dashboard
+          </a>
         </div>
 
-        <form
-          onSubmit={saveProfile}
-          className="border border-white/60 bg-white p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08)]"
-        >
-          <div className="mb-10 overflow-hidden border border-stone-200 bg-[#f8f4ed]">
+        <div className="overflow-hidden border border-stone-200 bg-[#f8f4ed] shadow-[0_20px_70px_rgba(0,0,0,0.08)]">
+          <div className="relative mb-10 overflow-hidden border-b border-stone-200 bg-[#f8f4ed]">
             <div
               className="relative h-64 bg-cover bg-center"
               style={{
-                backgroundImage: coverUrl
-                  ? `url(${coverUrl})`
+                backgroundImage: coverPreview
+                  ? `url(${coverPreview})`
                   : "linear-gradient(135deg, #d8b07b, #8d6432)",
               }}
             >
-              <label className="absolute right-5 top-5 cursor-pointer rounded-full border border-white/40 bg-white/30 px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-lg backdrop-blur-xl transition hover:bg-white/45">
-                {coverUploading ? "Uploading..." : "Upload Cover"}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/10 to-transparent" />
+
+              <label className="absolute right-4 top-4 z-20 cursor-pointer border border-white/30 bg-black/30 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white backdrop-blur-md transition hover:bg-black/45">
+                Change Cover
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleCoverUpload}
+                  onChange={(e) => setCoverFile(e.target.files?.[0] ?? null)}
                   className="hidden"
-                  disabled={coverUploading}
                 />
               </label>
 
-              <div className="absolute -bottom-14 left-8">
-                <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-[#f8f4ed] bg-[#efe8dc] shadow-xl">
-                  {avatarUrl ? (
+              <div className="absolute -bottom-16 left-8 z-20">
+                <div className="relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-[#f8f4ed] bg-[#efe8dc] shadow-xl">
+                  {avatarPreview ? (
                     <img
-                      src={avatarUrl}
+                      src={avatarPreview}
                       alt="Profile avatar"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full rounded-full object-cover"
                     />
                   ) : (
                     <span className="text-5xl text-[#a9793d]">⚓</span>
                   )}
-                </div>
 
-                <label className="mt-4 inline-flex cursor-pointer rounded-full border border-[#a9793d]/30 bg-white px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-700 shadow-sm transition hover:bg-[#f8f4ed]">
-                  {avatarUploading ? "Uploading..." : "Upload Avatar"}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    disabled={avatarUploading}
-                  />
-                </label>
+                  <label className="absolute bottom-0 left-0 right-0 cursor-pointer bg-black/45 py-2 text-center text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm transition hover:bg-black/60">
+                    Change
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setAvatarFile(e.target.files?.[0] ?? null)
+                      }
+                      className="hidden"
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div className="px-8 pb-8 pt-24">
-              <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
-                Profile Images
+            <div className="h-20" />
+
+            <div className="px-8 pb-8">
+              <h2
+                className={`${serif.className} text-4xl font-medium leading-tight text-stone-900`}
+              >
+                {formData.display_name || "Your Profile"}
+              </h2>
+
+              <p className="mt-1 text-sm font-bold uppercase tracking-[0.22em] text-stone-400">
+                {formData.username ? `@${formData.username}` : formData.email}
               </p>
 
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-600">
-                Upload a profile avatar and cover image. Cover images are saved
-                to your history so you can browse previous banners from the
-                dashboard.
-              </p>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold text-stone-500">
+                <span>{formData.location || "Location not set"}</span>
+                <span>•</span>
+                <span>{formData.healing_stage}</span>
+                <span>•</span>
+                <span>{formData.privacy_level}</span>
+              </div>
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <Field
-              label="Display Name"
-              value={displayName}
-              setValue={setDisplayName}
-              required
-            />
-            <Field
-              label="Username"
-              value={username}
-              setValue={setUsername}
-              placeholder="letters, numbers, underscores"
-            />
-            <Field label="Full Name" value={fullName} setValue={setFullName} />
-            <Field
-              label="Location"
-              value={location}
-              setValue={setLocation}
-              placeholder="City, State"
-            />
-            <Field label="Hometown" value={hometown} setValue={setHometown} />
-            <Field label="Website" value={website} setValue={setWebsite} />
-            <Field label="Phone" value={phone} setValue={setPhone} />
-            <Field
-              label="Birthday"
-              value={birthday}
-              setValue={setBirthday}
-              type="date"
-            />
-            <Field label="Pronouns" value={pronouns} setValue={setPronouns} />
-            <Field
-              label="Languages"
-              value={languages}
-              setValue={setLanguages}
-              placeholder="English, Spanish..."
-            />
-          </div>
+          <div className="px-6 pb-8 pt-0 md:px-10">
+            <h1
+              className={`${serif.className} text-5xl font-medium text-stone-900 md:text-7xl`}
+            >
+              Edit Profile
+            </h1>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <SelectField
-              label="Gender"
-              value={gender}
-              setValue={setGender}
-              options={[
-                ["", "Prefer not to say"],
-                ["male", "Male"],
-                ["female", "Female"],
-                ["nonbinary", "Non-binary"],
-                ["self_describe", "Prefer to self-describe"],
-              ]}
-            />
+            <p className="mt-3 max-w-2xl text-lg leading-relaxed text-stone-600">
+              Update your personal information, privacy, and location.
+            </p>
 
-            <SelectField
-              label="Relationship Status"
-              value={relationshipStatus}
-              setValue={setRelationshipStatus}
-              options={[
-                ["", "Prefer not to say"],
-                ["single", "Single"],
-                ["married", "Married"],
-                ["separated", "Separated"],
-                ["divorced", "Divorced"],
-                ["widowed", "Widowed"],
-                ["relationship", "In a relationship"],
-              ]}
-            />
+            <div className="mt-10 grid gap-8">
+              <div className="grid gap-6 md:grid-cols-2">
+                <TextInput
+                  label="Display Name"
+                  value={formData.display_name}
+                  onChange={(value) =>
+                    setFormData({ ...formData, display_name: value })
+                  }
+                  placeholder="Rafael Carrasquillo"
+                />
 
-            <SelectField
-              label="Healing Stage"
-              value={healingStage}
-              setValue={setHealingStage}
-              options={[
-                ["clarity", "Clarity — I need to understand"],
-                ["calm", "Calm — I need steadiness"],
-                ["strength", "Strength — I am rebuilding"],
-                ["purpose", "Purpose — I am moving forward"],
-              ]}
-            />
+                <TextInput
+                  label="Username"
+                  value={formData.username}
+                  onChange={(value) =>
+                    setFormData({ ...formData, username: value })
+                  }
+                  placeholder="rafael102476"
+                />
 
-            <SelectField
-              label="Default Privacy"
-              value={privacyLevel}
-              setValue={setPrivacyLevel}
-              options={[
-                ["private", "Private — only me"],
-                ["friends", "Friends only"],
-                ["members", "Members only"],
-              ]}
-            />
-          </div>
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+                      Location
+                    </label>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <TextArea label="Bio" value={bio} setValue={setBio} />
-            <TextArea label="Work" value={work} setValue={setWork} />
-            <TextArea
-              label="Education"
-              value={education}
-              setValue={setEducation}
-            />
-            <TextArea
-              label="Interests"
-              value={interests}
-              setValue={setInterests}
-            />
-          </div>
+                    <button
+                      type="button"
+                      onClick={useCurrentLocation}
+                      disabled={detectingLocation}
+                      className="flex h-8 w-8 items-center justify-center border border-stone-300 bg-white text-stone-500 transition hover:border-[#a9793d] hover:text-[#a9793d] disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Use current location"
+                      title="Use current location"
+                    >
+                      {detectingLocation ? (
+                        <span className="text-xs">...</span>
+                      ) : (
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          className="h-4 w-4"
+                        >
+                          <circle cx="12" cy="12" r="3" />
+                          <path d="M12 2v3" />
+                          <path d="M12 19v3" />
+                          <path d="M2 12h3" />
+                          <path d="M19 12h3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
 
-          <div className="mt-6">
-            <TextArea
-              label="Favorite Quote"
-              value={favoriteQuote}
-              setValue={setFavoriteQuote}
-              rows={3}
-            />
-          </div>
+                  <input
+                    value={formData.location}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        location: e.target.value,
+                      })
+                    }
+                    placeholder="Davenport, Florida"
+                    className="w-full border border-stone-300 bg-white px-4 py-3 text-sm text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
+                  />
+                </div>
 
-          <button
-            type="submit"
-            disabled={saving || avatarUploading || coverUploading}
-            className="mt-8 w-full rounded-full border border-[#f4d7a1]/50 bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
-          >
-            {saving ? "Saving..." : "Save Profile"}
-          </button>
+                <TextInput
+                  label="Hometown"
+                  value={formData.hometown}
+                  onChange={(value) =>
+                    setFormData({ ...formData, hometown: value })
+                  }
+                  placeholder="San Juan, Puerto Rico"
+                />
 
-          {message && (
-            <div className="mt-6 bg-[#f5f0e8] px-4 py-4 text-center">
-              <p className="text-sm font-semibold text-stone-700">{message}</p>
+                <SelectInput
+                  label="Healing Stage"
+                  value={formData.healing_stage}
+                  options={healingStageOptions}
+                  onChange={(value) =>
+                    setFormData({ ...formData, healing_stage: value })
+                  }
+                />
+
+                <SelectInput
+                  label="Privacy"
+                  value={formData.privacy_level}
+                  options={privacyOptions}
+                  onChange={(value) =>
+                    setFormData({ ...formData, privacy_level: value })
+                  }
+                />
+
+                <SelectInput
+                  label="Relationship"
+                  value={formData.relationship_status}
+                  options={relationshipOptions}
+                  onChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      relationship_status: value,
+                    })
+                  }
+                />
+
+                <CompanyInput
+                  label="Work"
+                  value={formData.work}
+                  logoUrl={formData.work_company_logo_url}
+                  domain={formData.work_company_domain}
+                  suggestions={companySuggestions}
+                  searching={searchingCompanies}
+                  onChange={searchCompanies}
+                  onSelect={selectCompany}
+                />
+
+                <SelectInput
+                  label="Education"
+                  value={formData.education}
+                  options={educationOptions}
+                  onChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      education: value,
+                    })
+                  }
+                />
+
+                <TextInput
+                  label="Website"
+                  value={formData.website}
+                  onChange={(value) =>
+                    setFormData({ ...formData, website: value })
+                  }
+                  placeholder="https://example.com"
+                />
+
+                <TextInput
+                  label="Languages"
+                  value={formData.languages}
+                  onChange={(value) =>
+                    setFormData({ ...formData, languages: value })
+                  }
+                  placeholder="English, Spanish"
+                />
+
+                <TextInput
+                  label="Interests"
+                  value={formData.interests}
+                  onChange={(value) =>
+                    setFormData({ ...formData, interests: value })
+                  }
+                  placeholder="Healing, fitness, technology, family"
+                />
+              </div>
+
+              <TextArea
+                label="Bio"
+                value={formData.bio}
+                onChange={(value) => setFormData({ ...formData, bio: value })}
+                placeholder="Rebuilding with clarity, strength, and purpose..."
+              />
+
+              <TextArea
+                label="Favorite Quote"
+                value={formData.favorite_quote}
+                onChange={(value) =>
+                  setFormData({ ...formData, favorite_quote: value })
+                }
+                placeholder="Rebuilding isn’t about returning to who I was—it’s about becoming who I was meant to be."
+              />
+
+              <div className="flex flex-wrap gap-4 border-t border-stone-200 pt-8">
+                <button
+                  type="button"
+                  onClick={saveProfile}
+                  disabled={saving || uploadingAvatar || uploadingCover}
+                  className="bg-[#a9793d] px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-md transition hover:bg-[#8d6432] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving || uploadingAvatar || uploadingCover
+                    ? "Saving..."
+                    : "Save Profile"}
+                </button>
+
+                <a
+                  href="/dashboard"
+                  className="border border-stone-300 bg-white px-8 py-4 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
+                >
+                  Cancel
+                </a>
+              </div>
             </div>
-          )}
-        </form>
+          </div>
+        </div>
       </section>
     </main>
   );
 }
 
-type FieldProps = {
-  label: string;
-  value: string;
-  setValue: (value: string) => void;
-  placeholder?: string;
-  type?: string;
-  required?: boolean;
-};
-
-function Field({
+function CompanyInput({
   label,
   value,
-  setValue,
+  logoUrl,
+  domain,
+  suggestions,
+  searching,
+  onChange,
+  onSelect,
+}: {
+  label: string;
+  value: string;
+  logoUrl: string;
+  domain: string;
+  suggestions: CompanySuggestion[];
+  searching: boolean;
+  onChange: (value: string) => void;
+  onSelect: (company: CompanySuggestion) => void;
+}) {
+  return (
+    <div className="relative">
+      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+        {label}
+      </label>
+
+      <div className="flex items-center border border-stone-300 bg-white">
+        {logoUrl && (
+          <img
+            src={logoUrl}
+            alt=""
+            className="ml-3 h-7 w-7 rounded-full object-contain"
+          />
+        )}
+
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Start typing company name..."
+          className="w-full bg-white px-4 py-3 text-sm text-stone-700 transition focus:outline-none"
+        />
+      </div>
+
+      {domain && (
+        <p className="mt-2 text-xs font-semibold text-stone-400">{domain}</p>
+      )}
+
+      {searching && (
+        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-stone-400">
+          Searching...
+        </p>
+      )}
+
+      {suggestions.length > 0 && (
+        <div className="absolute z-50 mt-2 max-h-72 w-full overflow-y-auto border border-stone-200 bg-white shadow-xl">
+          {suggestions.map((company) => (
+            <button
+              key={`${company.name}-${company.domain}`}
+              type="button"
+              onClick={() => onSelect(company)}
+              className="flex w-full items-center gap-3 border-b border-stone-100 px-4 py-3 text-left transition hover:bg-[#f3efe7]"
+            >
+              <img
+                src={company.logo}
+                alt=""
+                className="h-8 w-8 rounded-full object-contain"
+              />
+
+              <div>
+                <p className="text-sm font-semibold text-stone-800">
+                  {company.name}
+                </p>
+                <p className="text-xs text-stone-400">{company.domain}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TextInput({
+  label,
+  value,
+  onChange,
   placeholder,
-  type = "text",
-  required = false,
-}: FieldProps) {
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
+      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
         {label}
       </label>
 
       <input
-        required={required}
-        type={type}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="w-full border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        className="w-full border border-stone-300 bg-white px-4 py-3 text-sm text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
       />
     </div>
   );
 }
 
-type TextAreaProps = {
-  label: string;
-  value: string;
-  setValue: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-};
-
 function TextArea({
   label,
   value,
-  setValue,
+  onChange,
   placeholder,
-  rows = 5,
-}: TextAreaProps) {
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
+      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
         {label}
       </label>
 
       <textarea
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        rows={rows}
-        className="w-full resize-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        rows={4}
+        className="w-full border border-stone-300 bg-white px-4 py-3 text-sm leading-relaxed text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
       />
     </div>
   );
 }
 
-type SelectFieldProps = {
-  label: string;
-  value: string;
-  setValue: (value: string) => void;
-  options: [string, string][];
-};
+function SelectInput({
+  label,
 
-function SelectField({ label, value, setValue, options }: SelectFieldProps) {
+  value,
+
+  options,
+
+  onChange,
+}: {
+  label: string;
+
+  value: string;
+
+  options: string[];
+
+  onChange: (value: string) => void;
+}) {
   return (
     <div>
-      <label className="mb-2 block text-sm font-bold uppercase tracking-[0.2em] text-stone-600">
+      <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
         {label}
       </label>
 
       <select
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        className="w-full border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+        onChange={(e) => onChange(e.target.value)}
+        className="h-[46px] w-full appearance-none border border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-700 transition focus:border-[#a9793d] focus:outline-none"
       >
-        {options.map(([optionValue, optionLabel]) => (
-          <option key={optionValue || optionLabel} value={optionValue}>
-            {optionLabel}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
           </option>
         ))}
       </select>
