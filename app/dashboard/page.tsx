@@ -26,6 +26,9 @@ type Profile = {
   avatar_url: string | null;
   cover_url: string | null;
   work?: string | null;
+  work_company_name?: string | null;
+  work_company_logo_url?: string | null;
+  work_company_domain?: string | null;
   education?: string | null;
   hometown?: string | null;
   relationship_status?: string | null;
@@ -73,7 +76,7 @@ export default function DashboardPage() {
     const { data } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, education, hometown, relationship_status, website, languages, interests",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests",
       )
       .eq("id", user.id)
       .single();
@@ -90,6 +93,9 @@ export default function DashboardPage() {
       avatar_url: data?.avatar_url ?? null,
       cover_url: data?.cover_url ?? null,
       work: data?.work ?? null,
+      work_company_name: data?.work_company_name ?? null,
+      work_company_logo_url: data?.work_company_logo_url ?? null,
+      work_company_domain: data?.work_company_domain ?? null,
       education: data?.education ?? null,
       hometown: data?.hometown ?? null,
       relationship_status: data?.relationship_status ?? null,
@@ -114,7 +120,6 @@ export default function DashboardPage() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Could not load cover image history:", error.message);
       setCoverImages([]);
       return;
     }
@@ -260,7 +265,7 @@ export default function DashboardPage() {
                     event.stopPropagation();
                     previousCover();
                   }}
-                  className="absolute left-5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-white/20 bg-black/15 text-lg text-white/70 opacity-0 backdrop-blur-md transition duration-300 hover:bg-black/25 hover:text-white group-hover:opacity-100"
+                  className="absolute left-5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/15 text-lg text-white/70 opacity-0 backdrop-blur-md transition duration-300 hover:bg-black/25 hover:text-white group-hover:opacity-100"
                   aria-label="Previous cover image"
                 >
                   ‹
@@ -272,7 +277,7 @@ export default function DashboardPage() {
                     event.stopPropagation();
                     nextCover();
                   }}
-                  className="absolute right-5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-none border border-white/20 bg-black/15 text-lg text-white/70 opacity-0 backdrop-blur-md transition duration-300 hover:bg-black/25 hover:text-white group-hover:opacity-100"
+                  className="absolute right-5 top-1/2 z-20 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/15 text-lg text-white/70 opacity-0 backdrop-blur-md transition duration-300 hover:bg-black/25 hover:text-white group-hover:opacity-100"
                   aria-label="Next cover image"
                 >
                   ›
@@ -285,7 +290,7 @@ export default function DashboardPage() {
               className="absolute inset-0 cursor-pointer"
             />
 
-            <div className="absolute bottom-5 right-5 z-20 rounded-none border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70 opacity-0 backdrop-blur-md transition duration-300 group-hover:opacity-100">
+            <div className="absolute bottom-5 right-5 z-20 rounded-full border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70 opacity-0 backdrop-blur-md transition duration-300 group-hover:opacity-100">
               {coverImages.length > 0
                 ? `${currentCoverIndex + 1} of ${coverImages.length}`
                 : "No Cover History"}
@@ -297,7 +302,7 @@ export default function DashboardPage() {
                   <img
                     src={profile.avatar_url}
                     alt="Profile avatar"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full rounded-full object-cover"
                   />
                 ) : (
                   <span className="text-5xl text-[#a9793d]">⚓</span>
@@ -306,9 +311,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="px-8 pb-8 pt-10">
+          <div className="px-8 pb-8 pt-16">
             <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
               <div>
+                <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+                  Member Home
+                </p>
+
                 <h1
                   className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-stone-900 md:text-7xl`}
                 >
@@ -319,7 +328,7 @@ export default function DashboardPage() {
                   {profile?.username ? `@${profile.username}` : profile?.email}
                 </p>
 
-                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-2 text-sm font-semibold text-stone-500">
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm font-semibold text-stone-500">
                   <span>{profile?.location || "Location not set"}</span>
                   <span>•</span>
                   <span className="capitalize">
@@ -375,16 +384,29 @@ export default function DashboardPage() {
 
             <div className="flex flex-1 flex-col divide-y divide-stone-200">
               <AboutRow icon="⚑" label="Lives in" value={profile?.location} />
+
               <AboutRow icon="◬" label="From" value={profile?.hometown} />
-              <AboutRow icon="⚒" label="Work" value={profile?.work} />
+
+              <AboutRow
+                icon="⚒"
+                label="Work"
+                value={profile?.work_company_name || profile?.work}
+                logoUrl={profile?.work_company_logo_url}
+                domain={profile?.work_company_domain}
+              />
+
               <AboutRow icon="⌬" label="Education" value={profile?.education} />
+
               <AboutRow
                 icon="⊹"
                 label="Relationship"
                 value={formatLabel(profile?.relationship_status)}
               />
+
               <AboutRow icon="◎" label="Website" value={profile?.website} />
+
               <AboutRow icon="⋄" label="Languages" value={profile?.languages} />
+
               <AboutRow icon="✢" label="Interests" value={profile?.interests} />
             </div>
           </aside>
@@ -506,15 +528,35 @@ function AboutRow({
   icon,
   label,
   value,
+  logoUrl,
+  domain,
 }: {
   icon: string;
   label: string;
   value?: string | null;
+  logoUrl?: string | null;
+  domain?: string | null;
 }) {
+  const fallbackLogo =
+    domain && `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+
   return (
     <div className="flex gap-5 py-5">
       <div className="min-w-[42px] pt-[2px] text-3xl font-light leading-none text-stone-500">
-        {icon}
+        {logoUrl || fallbackLogo ? (
+          <img
+            src={logoUrl || fallbackLogo || ""}
+            alt=""
+            className="h-9 w-9 rounded-full object-contain"
+            onError={(event) => {
+              if (fallbackLogo) {
+                event.currentTarget.src = fallbackLogo;
+              }
+            }}
+          />
+        ) : (
+          icon
+        )}
       </div>
 
       <div>
@@ -525,6 +567,10 @@ function AboutRow({
         <p className="mt-2 text-lg font-medium leading-relaxed text-stone-800">
           {value || "Not added yet"}
         </p>
+
+        {domain && (
+          <p className="mt-1 text-xs font-semibold text-stone-400">{domain}</p>
+        )}
       </div>
     </div>
   );

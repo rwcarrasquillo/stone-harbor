@@ -376,6 +376,21 @@ export default function WelcomePage() {
     return data.publicUrl;
   }
 
+  async function saveProfileHistory(
+    currentUserId: string,
+    snapshot: ProfileForm,
+  ) {
+    const { error } = await supabase.from("profile_change_history").insert({
+      user_id: currentUserId,
+      change_type: "profile_update",
+      snapshot,
+    });
+
+    if (error) {
+      console.warn("Profile history was not saved:", error.message);
+    }
+  }
+
   async function saveProfile() {
     if (!userId) return;
 
@@ -384,7 +399,7 @@ export default function WelcomePage() {
     const avatarUrl = await uploadAvatar();
     const coverUrl = await uploadCover();
 
-    const { error } = await supabase.from("profiles").upsert({
+    const updatedProfile = {
       id: userId,
       email: formData.email,
       display_name: formData.display_name,
@@ -408,15 +423,23 @@ export default function WelcomePage() {
       interests: formData.interests,
       favorite_quote: formData.favorite_quote,
       updated_at: new Date().toISOString(),
-    });
+    };
 
-    setSaving(false);
+    const { error } = await supabase.from("profiles").upsert(updatedProfile);
 
     if (error) {
+      setSaving(false);
       alert(`Could not save profile: ${error.message}`);
       return;
     }
 
+    await saveProfileHistory(userId, {
+      ...formData,
+      avatar_url: avatarUrl,
+      cover_url: coverUrl,
+    });
+
+    setSaving(false);
     window.location.href = "/dashboard";
   }
 
@@ -758,9 +781,12 @@ function CompanyInput({
       </label>
 
       <div className="flex items-center border border-stone-300 bg-white">
-        {logoUrl && (
+        {(logoUrl || domain) && (
           <img
-            src={logoUrl}
+            src={
+              logoUrl ||
+              `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+            }
             alt=""
             className="ml-3 h-7 w-7 rounded-full object-contain"
           />
@@ -794,7 +820,10 @@ function CompanyInput({
               className="flex w-full items-center gap-3 rounded-none border-b border-stone-100 px-4 py-3 text-left transition hover:bg-[#f3efe7]"
             >
               <img
-                src={company.logo}
+                src={
+                  company.logo ||
+                  `https://www.google.com/s2/favicons?domain=${company.domain}&sz=64`
+                }
                 alt=""
                 className="h-8 w-8 rounded-full object-contain"
               />
