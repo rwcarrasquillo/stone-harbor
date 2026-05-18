@@ -51,6 +51,14 @@ type DailyQuote = {
   category: string | null;
 };
 
+type DashboardCardProps = {
+  href: string;
+  label: string;
+  title: string;
+  text: string;
+  badge?: number;
+};
+
 function normalizeHealingStage(value: string | null | undefined) {
   const stage = value?.trim().toLowerCase();
 
@@ -71,6 +79,7 @@ export default function DashboardPage() {
 
   const [dailyQuote, setDailyQuote] = useState<DailyQuote | null>(null);
   const [quoteStage, setQuoteStage] = useState("Clarity");
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
 
   const activeCover = useMemo(() => {
     return (
@@ -79,6 +88,18 @@ export default function DashboardPage() {
   }, [coverImages, currentCoverIndex, profile?.cover_url]);
 
   const activeCoverDetails = coverImages[currentCoverIndex] || null;
+
+  async function loadUnreadMessageCount() {
+    const { data, error } = await supabase.rpc("get_unread_message_count");
+
+    if (error) {
+      console.error("Could not load unread message count:", error.message);
+      setUnreadMessageCount(0);
+      return;
+    }
+
+    setUnreadMessageCount(data ?? 0);
+  }
 
   async function loadDailyQuote(healingStageValue: string | null | undefined) {
     const today = new Date().toISOString().split("T")[0];
@@ -170,6 +191,7 @@ export default function DashboardPage() {
     setProfile(loadedProfile);
     await loadCoverImages(user.id, loadedProfile.cover_url);
     await loadDailyQuote(loadedProfile.healing_stage);
+    await loadUnreadMessageCount();
     setLoading(false);
   }
 
@@ -270,6 +292,29 @@ export default function DashboardPage() {
     checkUser();
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`dashboard-unread-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        async () => {
+          await loadUnreadMessageCount();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#f3efe7]">
@@ -299,6 +344,18 @@ export default function DashboardPage() {
               className="rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
             >
               Edit Profile
+            </a>
+
+            <a
+              href="/messages"
+              className="relative rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+            >
+              Messages
+              {unreadMessageCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-[10px] font-black text-white">
+                  {unreadMessageCount}
+                </span>
+              )}
             </a>
 
             <button
@@ -552,6 +609,22 @@ export default function DashboardPage() {
               />
 
               <DashboardCard
+                href="/messages"
+                label={
+                  unreadMessageCount > 0
+                    ? `${unreadMessageCount} Unread`
+                    : "Private"
+                }
+                title="Messages"
+                text={
+                  unreadMessageCount > 0
+                    ? "You have unread member messages waiting."
+                    : "Start private conversations with other Stone Harbor members."
+                }
+                badge={unreadMessageCount}
+              />
+
+              <DashboardCard
                 href="/members-blog"
                 label="Members"
                 title="Blog"
@@ -563,13 +636,6 @@ export default function DashboardPage() {
                 label="Identity"
                 title="Profile"
                 text="Update your avatar, cover image, privacy defaults, and healing stage."
-              />
-
-              <DashboardCard
-                href="/community"
-                label="Coming Soon"
-                title="Community"
-                text="Future member feed, photo sharing, friends, and support circles."
               />
             </div>
           </section>
@@ -712,18 +778,20 @@ function DashboardCard({
   label,
   title,
   text,
-}: {
-  href: string;
-  label: string;
-  title: string;
-  text: string;
-}) {
+  badge = 0,
+}: DashboardCardProps) {
   return (
     <a
       href={href}
-      className="group flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
+      className="group relative flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
     >
-      <p className="mb-4 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
+      {badge > 0 && (
+        <span className="absolute right-5 top-5 flex h-8 min-w-8 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-xs font-black text-white shadow-[0_8px_20px_rgba(169,121,61,0.35)]">
+          {badge}
+        </span>
+      )}
+
+      <p className="mb-4 pr-10 text-sm font-bold uppercase tracking-[0.25em] text-[#a9793d]">
         {label}
       </p>
 
