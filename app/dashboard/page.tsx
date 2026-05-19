@@ -135,6 +135,14 @@ export default function DashboardPage() {
   const [dailyQuote, setDailyQuote] = useState<DailyQuote | null>(null);
   const [quoteStage, setQuoteStage] = useState("Clarity");
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [streak, setStreak] = useState<number | null>(null);
+  const [dailyReflections, setDailyReflections] = useState<number>(0);
+  const [roadmapProgress, setRoadmapProgress] = useState<{
+    percent: number;
+    next_step_title: string | null;
+    completed_steps: number;
+    total_steps: number;
+  } | null>(null);
   const [postBody, setPostBody] = useState("");
   const [postPrivacy, setPostPrivacy] = useState("members");
   const [memberPosts, setMemberPosts] = useState<MemberPost[]>([]);
@@ -360,7 +368,35 @@ export default function DashboardPage() {
     await loadDailyQuote(loadedProfile.healing_stage);
     await loadUnreadMessageCount();
     await loadMemberPosts();
+    await loadStatistics();
     setLoading(false);
+  }
+
+  async function loadStatistics() {
+    const [
+      { data: streakData },
+      { data: reflectionsData },
+      { data: roadmapData },
+    ] = await Promise.all([
+      supabase.rpc("get_user_streak"),
+      supabase.rpc("get_daily_reflection_count"),
+      supabase.rpc("get_user_roadmap_progress"),
+    ]);
+    setStreak((streakData as number | null) ?? 0);
+    setDailyReflections((reflectionsData as number | null) ?? 0);
+
+    // get_user_roadmap_progress returns a one-row table → first element.
+    const row = Array.isArray(roadmapData) ? roadmapData[0] : roadmapData;
+    if (row) {
+      setRoadmapProgress({
+        percent: row.percent ?? 0,
+        next_step_title: row.next_step_title ?? null,
+        completed_steps: row.completed_steps ?? 0,
+        total_steps: row.total_steps ?? 0,
+      });
+    } else {
+      setRoadmapProgress(null);
+    }
   }
 
   async function loadCoverImages(
@@ -651,11 +687,16 @@ export default function DashboardPage() {
                 Streak
               </p>
             </div>
-            {/* TODO: wire to real streak query */}
             <p
               className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
             >
-              Day 7.
+              {streak === null
+                ? "—"
+                : streak === 0
+                  ? "Begin today."
+                  : streak === 1
+                    ? "Day 1."
+                    : `Day ${streak}.`}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-stone-500">
               Missing a day doesn&apos;t reset you.
@@ -678,11 +719,14 @@ export default function DashboardPage() {
             <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
               Brotherhood
             </p>
-            {/* TODO: wire to real Supabase count of today's posts/check-ins */}
             <p
               className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
             >
-              12 men reflected today.
+              {dailyReflections === 0
+                ? "Be the first today."
+                : dailyReflections === 1
+                  ? "1 man reflected today."
+                  : `${dailyReflections} men reflected today.`}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-stone-500">
               You&apos;re not the only one here.
@@ -1224,23 +1268,50 @@ export default function DashboardPage() {
                 Pick up where you left off.
               </h2>
               <p className="mt-4 max-w-xl text-base leading-relaxed text-stone-600">
-                {/* TODO: wire to real progress data */}
-                You&apos;re <span className="font-bold">
-                  23% through
-                </span> the {stage} path. Next:{" "}
-                <span
-                  className={`${serif.className} italic`}
-                  style={{ color: accent }}
-                >
-                  Naming the Pattern.
-                </span>
+                {roadmapProgress === null ? (
+                  <>Loading your roadmap…</>
+                ) : roadmapProgress.total_steps === 0 ? (
+                  <>No steps in the {stage} path yet. Check back soon.</>
+                ) : roadmapProgress.completed_steps === 0 ? (
+                  <>
+                    You haven&apos;t started the {stage} path yet. Begin with:{" "}
+                    <span
+                      className={`${serif.className} italic`}
+                      style={{ color: accent }}
+                    >
+                      {roadmapProgress.next_step_title}.
+                    </span>
+                  </>
+                ) : roadmapProgress.next_step_title === null ? (
+                  <>
+                    You&apos;ve completed the {stage} path. Time to set the next
+                    intention.
+                  </>
+                ) : (
+                  <>
+                    You&apos;re{" "}
+                    <span className="font-bold">
+                      {roadmapProgress.percent}% through
+                    </span>{" "}
+                    the {stage} path. Next:{" "}
+                    <span
+                      className={`${serif.className} italic`}
+                      style={{ color: accent }}
+                    >
+                      {roadmapProgress.next_step_title}.
+                    </span>
+                  </>
+                )}
               </p>
             </div>
             <div>
               <div className="mb-3 h-[6px] w-full bg-stone-200">
                 <div
                   className="h-[6px] transition-all duration-700"
-                  style={{ width: "23%", backgroundColor: accent }}
+                  style={{
+                    width: `${roadmapProgress?.percent ?? 0}%`,
+                    backgroundColor: accent,
+                  }}
                 />
               </div>
               <a

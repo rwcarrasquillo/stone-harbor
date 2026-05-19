@@ -75,6 +75,7 @@ export default function Home() {
   const [selectedPath, setSelectedPath] = useState<JourneyKey>("clarity");
   const [memberName, setMemberName] = useState<string | null>(null);
   const [breathPhase, setBreathPhase] = useState<"inhale" | "exhale">("inhale");
+  const [newMembersThisWeek, setNewMembersThisWeek] = useState<number>(0);
 
   const selectedJourney = useMemo(
     () => journeyOptions[selectedPath],
@@ -109,6 +110,12 @@ export default function Home() {
       );
     }
     loadMember();
+  }, []);
+
+  useEffect(() => {
+    supabase.rpc("get_new_members_this_week").then(({ data }) => {
+      setNewMembersThisWeek((data as number | null) ?? 0);
+    });
   }, []);
 
   async function handleLogout() {
@@ -340,8 +347,12 @@ export default function Home() {
               transition={{ duration: 1.2, delay: 1 }}
               className="mt-10 text-xs font-semibold uppercase tracking-[0.3em] text-white/60"
             >
-              <span className="text-[#e8c896]">117 men</span> began recovery
-              this week.
+              <span className="text-[#e8c896]">
+                {newMembersThisWeek === 1
+                  ? "1 man"
+                  : `${newMembersThisWeek} men`}
+              </span>{" "}
+              began recovery this week.
             </motion.p>
           </div>
         </div>
