@@ -143,6 +143,7 @@ export default function DashboardPage() {
     completed_steps: number;
     total_steps: number;
   } | null>(null);
+  const [newReadCount, setNewReadCount] = useState<number>(0);
   const [postBody, setPostBody] = useState("");
   const [postPrivacy, setPostPrivacy] = useState("members");
   const [memberPosts, setMemberPosts] = useState<MemberPost[]>([]);
@@ -283,44 +284,88 @@ export default function DashboardPage() {
     });
   }
 
+  // Map each pillar to the themes the quote generator actually produces.
+  // The edge function emits Clarity / Rebuilding / Healing / Growing / Surviving / Thriving;
+  // these mappings translate pillar → semantically-aligned themes.
+  // Adjust freely if you change the theme list in generate-daily-quote.
+  function themesForStage(stage: string): string[] {
+    const s = stage.toLowerCase();
+    if (s === "calm") return ["Healing", "Surviving"];
+    if (s === "strength") return ["Rebuilding", "Growing", "Thriving"];
+    return ["Clarity", "Surviving", "Healing"]; // clarity default
+  }
+
+  // Local date, not UTC — so the daily quote doesn't flip at 4pm Pacific.
+  function localDateString(offsetDays = 0): string {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  // Deterministic pick across a day: stable across page reloads, varies by day.
+  function pickStable<T>(arr: T[], seedKey: string): T | null {
+    if (arr.length === 0) return null;
+    let h = 0;
+    for (let i = 0; i < seedKey.length; i++) {
+      h = (h << 5) - h + seedKey.charCodeAt(i);
+      h |= 0;
+    }
+    return arr[Math.abs(h) % arr.length];
+  }
+
   async function loadDailyQuote(healingStageValue: string | null | undefined) {
-    const today = new Date().toISOString().split("T")[0];
+    const today = localDateString();
     const normalizedStage = normalizeHealingStage(healingStageValue);
     setQuoteStage(normalizedStage);
 
-    const { data, error } = await supabase
-      .from("daily_quotes")
-      .select("quote_text, theme, category")
-      .eq("quote_date", today)
-      .eq("audience", "men")
-      .eq("theme", normalizedStage)
-      .eq("is_active", true)
-      .maybeSingle();
+    const stageThemes = themesForStage(normalizedStage);
 
-    if (error) {
-      console.error("Daily quote error:", error.message);
-      setDailyQuote(null);
-      return;
-    }
-    if (data) {
-      setDailyQuote(data);
-      return;
-    }
-    const { data: fallbackQuote, error: fallbackError } = await supabase
+    // Tier 1: today's quotes matching the user's stage themes.
+    const { data: todayMatches } = await supabase
       .from("daily_quotes")
       .select("quote_text, theme, category")
       .eq("quote_date", today)
       .eq("audience", "men")
       .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
+      .in("theme", stageThemes);
 
-    if (fallbackError) {
-      console.error("Fallback quote error:", fallbackError.message);
-      setDailyQuote(null);
+    if (todayMatches && todayMatches.length > 0) {
+      // Deterministic pick: same quote for the whole day, varies per stage/date.
+      const seed = `${today}-${normalizedStage}`;
+      setDailyQuote(pickStable(todayMatches, seed));
       return;
     }
-    setDailyQuote(fallbackQuote);
+
+    // Tier 2: last 7 days matching the user's stage themes (no fresh quote today).
+    const sevenDaysAgo = localDateString(-7);
+    const { data: weekMatches } = await supabase
+      .from("daily_quotes")
+      .select("quote_text, theme, category")
+      .gte("quote_date", sevenDaysAgo)
+      .eq("audience", "men")
+      .eq("is_active", true)
+      .in("theme", stageThemes)
+      .order("quote_date", { ascending: false })
+      .limit(7);
+
+    if (weekMatches && weekMatches.length > 0) {
+      const seed = `${today}-${normalizedStage}-w`;
+      setDailyQuote(pickStable(weekMatches, seed));
+      return;
+    }
+
+    // Tier 3: any active quote from the last 30 days, ignoring stage.
+    const thirtyDaysAgo = localDateString(-30);
+    const { data: anyRecent } = await supabase
+      .from("daily_quotes")
+      .select("quote_text, theme, category")
+      .gte("quote_date", thirtyDaysAgo)
+      .eq("audience", "men")
+      .eq("is_active", true)
+      .order("quote_date", { ascending: false })
+      .limit(1);
+
+    setDailyQuote(anyRecent?.[0] ?? null);
   }
 
   async function checkUser() {
@@ -377,13 +422,16 @@ export default function DashboardPage() {
       { data: streakData },
       { data: reflectionsData },
       { data: roadmapData },
+      { data: newReadData },
     ] = await Promise.all([
       supabase.rpc("get_user_streak"),
       supabase.rpc("get_daily_reflection_count"),
       supabase.rpc("get_user_roadmap_progress"),
+      supabase.rpc("get_new_posts_for_my_stage"),
     ]);
     setStreak((streakData as number | null) ?? 0);
     setDailyReflections((reflectionsData as number | null) ?? 0);
+    setNewReadCount((newReadData as number | null) ?? 0);
 
     // get_user_roadmap_progress returns a one-row table → first element.
     const row = Array.isArray(roadmapData) ? roadmapData[0] : roadmapData;
@@ -1227,9 +1275,14 @@ export default function DashboardPage() {
               />
               <DashboardCard
                 href="/members-blog"
-                label="Members"
+                label={newReadCount > 0 ? `${newReadCount} New` : "Members"}
                 title="Read"
-                text="Protected articles and thoughtful member discussions."
+                text={
+                  newReadCount > 0
+                    ? `${newReadCount} new ${newReadCount === 1 ? "post" : "posts"} in your stage this month.`
+                    : "Protected articles and thoughtful member discussions."
+                }
+                badge={newReadCount}
                 Icon={Book}
               />
               <DashboardCard
