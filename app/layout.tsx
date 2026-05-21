@@ -3,7 +3,7 @@ import "./globals.css";
 import { sans } from "@/lib/fonts";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://stoneharbor.com"),
+  metadataBase: new URL("https://stoneharbor.app"),
   title: {
     default: "Stone Harbor — A patient harbor for men finding their way back",
     template: "%s · Stone Harbor",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     description:
       "A patient harbor for men finding their way back. Clarity, calm, and strength after the storm.",
     siteName: "Stone Harbor",
-    url: "https://stoneharbor.com",
+    url: "https://stoneharbor.app",
     type: "website",
     images: [
       {
