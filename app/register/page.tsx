@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { serif, sans } from "@/lib/fonts";
 import { Anchor, Lock, Spark } from "@/app/components/icons";
+import { LogIn, UserPlus } from "lucide-react";
 
 // Brand system — matches home, dashboard, journal, login
 const GOLD = "#c4934e";
@@ -287,24 +288,28 @@ export default function RegisterPage() {
       </svg>
 
       {/* TOP BAR */}
-      <header className="relative z-30 px-6 py-6 md:px-10">
+      <header className="relative z-30 px-4 py-3 md:px-10 md:py-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link
             href="/"
             className="group flex flex-col leading-none no-underline"
           >
-            <span className="text-base font-semibold uppercase tracking-[0.28em] text-[#c4934e] transition group-hover:text-white">
+            <span className="text-sm font-semibold uppercase tracking-[0.22em] text-[#c4934e] transition group-hover:text-white md:text-base md:tracking-[0.28em]">
               ← Stone Harbor
             </span>
-            <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]/70">
+            <span className="mt-1 hidden text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]/70 md:block">
               Men&apos;s Mental Wellness
             </span>
           </Link>
           <Link
             href="/login"
-            className="group relative overflow-hidden rounded-none border border-[#c4934e] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[#c4934e] transition hover:bg-[#c4934e] hover:text-black"
+            aria-label="Already a member — log in"
+            className="group relative overflow-hidden rounded-none border border-[#c4934e] p-2 text-[#c4934e] transition hover:bg-[#c4934e] hover:text-black md:px-5 md:py-2.5"
           >
-            <span className="relative z-10">Already A Member</span>
+            <LogIn size={18} className="md:hidden" aria-hidden="true" />
+            <span className="relative z-10 hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
+              Already A Member
+            </span>
           </Link>
         </div>
       </header>

@@ -406,17 +406,15 @@ export default function AdminDashboard() {
             <div className="flex flex-wrap gap-2">
               <Link
                 href="/admin/blog"
-                className="group relative inline-flex items-center gap-2 overflow-hidden border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+                aria-label="Blog review"
+                className="group relative inline-flex items-center overflow-hidden border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
               >
                 <Book size={12} />
-                Blog Review
+                <span className="hidden md:inline">Blog Review</span>
                 {stats && stats.draft_posts > 0 && (
                   <span
                     className="ml-1 border bg-[#f3efe7] px-1.5 py-0.5 text-[10px] font-black"
-                    style={{
-                      borderColor: GOLD_DEEP,
-                      color: GOLD_DEEP,
-                    }}
+                    style={{ borderColor: GOLD_DEEP, color: GOLD_DEEP }}
                   >
                     {stats.draft_posts}
                   </span>
@@ -424,17 +422,15 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 href="/admin/external"
-                className="group relative inline-flex items-center gap-2 overflow-hidden border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+                aria-label="External content"
+                className="group relative inline-flex items-center overflow-hidden border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
               >
                 <Globe size={12} />
-                External Content
+                <span className="hidden md:inline">External Content</span>
                 {externalCounts && externalCounts.drafts > 0 && (
                   <span
                     className="ml-1 border bg-[#f3efe7] px-1.5 py-0.5 text-[10px] font-black"
-                    style={{
-                      borderColor: GOLD_DEEP,
-                      color: GOLD_DEEP,
-                    }}
+                    style={{ borderColor: GOLD_DEEP, color: GOLD_DEEP }}
                   >
                     {externalCounts.drafts}
                   </span>
@@ -442,7 +438,8 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 href="/admin/moderation"
-                className="group relative inline-flex items-center gap-2 overflow-hidden border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+                aria-label="Moderation"
+                className="group relative inline-flex items-center overflow-hidden border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
               >
                 {/* Inline flag glyph — same line-art family as icons.tsx */}
                 <svg
@@ -458,7 +455,7 @@ export default function AdminDashboard() {
                   <path d="M4 22V4" />
                   <path d="M4 4h13l-2 4 2 4H4" />
                 </svg>
-                Moderation
+                <span className="hidden md:inline">Moderation</span>
                 {pendingFlagCount > 0 && (
                   <span
                     className="ml-1 border bg-[#fcefe9] px-1.5 py-0.5 text-[10px] font-black"
@@ -470,17 +467,20 @@ export default function AdminDashboard() {
               </Link>
               <Link
                 href="/dashboard"
-                className="border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+                aria-label="Member view"
+                className="inline-flex items-center border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
               >
-                Member View
+                <UserIcon size={12} />
+                <span className="hidden md:inline">Member View</span>
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+                aria-label="Log out"
+                className="inline-flex items-center border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
               >
                 <Logout size={12} />
-                Logout
+                <span className="hidden md:inline">Logout</span>
               </button>
             </div>
           </div>

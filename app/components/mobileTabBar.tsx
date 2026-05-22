@@ -54,6 +54,8 @@ const HIDDEN_PREFIXES = [
   "/onboarding",
   "/suspended",
   "/offline",
+  "/meditation",
+  "/vent",
 ];
 
 // Treat the homepage as public — only show the bar once the member

@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { serif, sans } from "@/lib/fonts";
 import { Lock } from "@/app/components/icons";
+import { LogIn } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -140,24 +141,28 @@ export default function AdminLoginPage() {
       </svg>
 
       {/* TOP BAR */}
-      <header className="relative z-30 px-6 py-6 md:px-10">
+      <header className="relative z-30 px-4 py-3 md:px-10 md:py-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link
             href="/"
             className="group flex flex-col leading-none no-underline"
           >
-            <span className="text-base font-semibold uppercase tracking-[0.28em] text-[#c4934e] transition group-hover:text-white">
+            <span className="text-sm font-semibold uppercase tracking-[0.22em] text-[#c4934e] transition group-hover:text-white md:text-base md:tracking-[0.28em]">
               ← Stone Harbor
             </span>
-            <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]/70">
+            <span className="mt-1 hidden text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]/70 md:block">
               Admin Console
             </span>
           </Link>
           <Link
             href="/login"
-            className="text-xs font-bold uppercase tracking-[0.22em] text-white/60 transition hover:text-[#c4934e]"
+            aria-label="Member login"
+            className="group relative overflow-hidden rounded-none border border-white/30 p-2 text-white/60 transition hover:border-[#c4934e] hover:text-[#c4934e] md:border-transparent md:p-0 md:hover:border-transparent"
           >
-            Member Login →
+            <LogIn size={18} className="md:hidden" aria-hidden="true" />
+            <span className="hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
+              Member Login →
+            </span>
           </Link>
         </div>
       </header>

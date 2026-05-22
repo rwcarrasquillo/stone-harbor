@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { LogIn, LogOut, UserPlus, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 import { serif, sans } from "@/lib/fonts";
@@ -68,6 +69,10 @@ export default function Home() {
   const [memberName, setMemberName] = useState<string | null>(null);
   const [breathPhase, setBreathPhase] = useState<"inhale" | "exhale">("inhale");
   const [newMembersThisWeek, setNewMembersThisWeek] = useState<number>(0);
+  const [breathStarted, setBreathStarted] = useState(false);
+  const [breathSecondsElapsed, setBreathSecondsElapsed] = useState(0);
+  const journeyCarouselRef = useRef<HTMLDivElement>(null);
+  const breathSectionRef = useRef<HTMLDivElement>(null);
 
   const selectedJourney = useMemo(
     () => journeyOptions[selectedPath],
@@ -81,6 +86,41 @@ export default function Home() {
     }, 4000);
     return () => clearInterval(id);
   }, []);
+
+  /**
+   * Breath ritual progress.
+   *
+   * Starts counting only when the breath section comes into view —
+   * not on page load. A member who scrolls straight past the hero
+   * shouldn't have already burned 30 seconds of their sixty by the
+   * time they arrive at the circle.
+   *
+   * Once started, ticks 0 → 60 seconds and then holds. No reset,
+   * no auto-loop. The completion message fades in at 60 and stays.
+   * Therapeutic literature on grounding practices favors permission
+   * over performance — finishing means finishing, not "lap two."
+   */
+  useEffect(() => {
+    const section = breathSectionRef.current;
+    if (!section || breathStarted) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setBreathStarted(true);
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [breathStarted]);
+
+  useEffect(() => {
+    if (!breathStarted) return;
+    if (breathSecondsElapsed >= 60) return;
+    const id = setInterval(() => {
+      setBreathSecondsElapsed((s) => Math.min(s + 1, 60));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [breathStarted, breathSecondsElapsed]);
 
   useEffect(() => {
     async function loadMember() {
@@ -108,6 +148,61 @@ export default function Home() {
     supabase.rpc("get_new_members_this_week").then(({ data }) => {
       setNewMembersThisWeek((data as number | null) ?? 0);
     });
+  }, []);
+
+  /**
+   * Mobile-only: as the journey carousel scrolls, sync the selection
+   * to whichever option is most centered. The description card below
+   * the carousel updates immediately so swiping feels like browsing
+   * the recommendations rather than a static row of buttons.
+   *
+   * Gated to <md viewport because desktop renders the same buttons as
+   * a stacked grid with no horizontal scroll — IntersectionObserver
+   * would fire ambiguously when all three are 100% visible at rest.
+   *
+   * Debounced 100ms so we update once at the end of a flick instead of
+   * 60 times during it. Listener is passive so it never blocks scroll.
+   */
+  useEffect(() => {
+    const container = journeyCarouselRef.current;
+    if (!container) return;
+
+    let scrollTimeout: ReturnType<typeof setTimeout>;
+
+    function pickCenteredOption() {
+      if (!container) return;
+      if (window.innerWidth >= 768) return; // desktop: ignore
+      const cRect = container.getBoundingClientRect();
+      const cCenter = cRect.left + cRect.width / 2;
+      let bestKey: JourneyKey | null = null;
+      let bestDistance = Infinity;
+
+      Array.from(container.children).forEach((child) => {
+        const el = child as HTMLElement;
+        const key = el.dataset.option as JourneyKey | undefined;
+        if (!key) return;
+        const r = el.getBoundingClientRect();
+        const center = r.left + r.width / 2;
+        const distance = Math.abs(center - cCenter);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestKey = key;
+        }
+      });
+
+      if (bestKey) setSelectedPath(bestKey);
+    }
+
+    function onScroll() {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(pickCenteredOption, 100);
+    }
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      clearTimeout(scrollTimeout);
+      container.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   async function handleLogout() {
@@ -206,18 +301,22 @@ export default function Home() {
         <rect width="100%" height="100%" filter="url(#film-grain)" />
       </svg>
 
-      {/* Vertical edge guides */}
-      <div className="pointer-events-none fixed left-8 top-0 z-10 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-      <div className="pointer-events-none fixed right-8 top-0 z-10 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+      {/* Vertical edge guides — decorative framing only.
+          Hidden below xl: on smaller screens the content sits closer to the
+          viewport edges and the lines can clip through buttons. On wide
+          desktops they sit at the very edge (8px in), well outside any
+          content padding, so no overlap is possible. */}
+      <div className="pointer-events-none fixed left-2 top-0 z-10 hidden h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent xl:block" />
+      <div className="pointer-events-none fixed right-2 top-0 z-10 hidden h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent xl:block" />
 
       {/* HEADER */}
       <header className="fixed left-0 top-0 z-50 w-full border-b border-stone-300 bg-[#f3efe7] shadow-[0_18px_60px_rgba(0,0,0,0.15)]">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6 md:py-6">
           <Link href="/" className="flex flex-col leading-none no-underline">
-            <span className="text-xl font-semibold uppercase tracking-[0.28em] text-[#c4934e]">
+            <span className="text-base font-semibold uppercase tracking-[0.22em] text-[#c4934e] md:text-xl md:tracking-[0.28em]">
               Stone Harbor
             </span>
-            <span className="mt-2 text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]">
+            <span className="mt-2 hidden text-[0.68rem] font-bold uppercase tracking-[0.18em] text-[#c4934e] md:block">
               Men&apos;s Mental Wellness
             </span>
           </Link>
@@ -236,32 +335,48 @@ export default function Home() {
             </Link>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               {memberName ? (
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558]"
+                  aria-label="Log out"
+                  className="rounded-none border border-[#c4934e] p-2 text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558] md:px-4 md:py-2"
                 >
-                  Logout
+                  <LogOut size={18} className="md:hidden" aria-hidden="true" />
+                  <span className="hidden text-xs font-bold uppercase tracking-[0.2em] md:inline">
+                    Logout
+                  </span>
                 </button>
               ) : (
                 <Link
                   href="/login"
-                  className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558]"
+                  aria-label="Log in"
+                  className="rounded-none border border-[#c4934e] p-2 text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558] md:px-4 md:py-2"
                 >
-                  Login
+                  <LogIn size={18} className="md:hidden" aria-hidden="true" />
+                  <span className="hidden text-xs font-bold uppercase tracking-[0.2em] md:inline">
+                    Login
+                  </span>
                 </Link>
               )}
               <Link
                 href={memberName ? "/dashboard" : "/register"}
-                className="rounded-none border border-[#c4934e] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558]"
+                aria-label={memberName ? "Open dashboard" : "Join Stone Harbor"}
+                className="rounded-none border border-[#c4934e] p-2 text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558] md:px-4 md:py-2"
               >
-                {memberName ? "Dashboard" : "Join"}
+                {memberName ? (
+                  <LayoutDashboard size={18} className="md:hidden" aria-hidden="true" />
+                ) : (
+                  <UserPlus size={18} className="md:hidden" aria-hidden="true" />
+                )}
+                <span className="hidden text-xs font-bold uppercase tracking-[0.2em] md:inline">
+                  {memberName ? "Dashboard" : "Join"}
+                </span>
               </Link>
             </div>
             {memberName && (
-              <p className="max-w-[220px] truncate text-right text-xs font-bold uppercase tracking-[0.18em] text-stone-600">
+              <p className="hidden max-w-[220px] truncate text-right text-xs font-bold uppercase tracking-[0.18em] text-stone-600 md:block">
                 {memberName}
               </p>
             )}
@@ -270,14 +385,14 @@ export default function Home() {
       </header>
 
       {/* HERO */}
-      <section className="relative z-20 min-h-screen px-6 pb-20 pt-24">
-        <div className="mx-auto flex min-h-[80vh] max-w-7xl items-start pt-24 md:pt-32">
+      <section className="relative z-20 px-6 pb-8 pt-16 md:min-h-screen md:pb-20 md:pt-24">
+        <div className="mx-auto flex max-w-7xl items-start pt-4 md:min-h-[80vh] md:pt-32">
           <div>
             <motion.h1
               initial={{ opacity: 0, y: 35 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className={`${serif.className} max-w-5xl text-7xl font-semibold leading-[0.9] text-white md:text-[8.5rem]`}
+              className={`${serif.className} max-w-5xl text-5xl font-semibold leading-[0.95] text-white md:text-[8.5rem] md:leading-[0.9]`}
             >
               The storm
               <br />
@@ -288,7 +403,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.25 }}
-              className="mt-10 max-w-xl text-xl leading-relaxed text-white md:text-2xl"
+              className="mt-5 max-w-xl text-base leading-relaxed text-white md:mt-10 md:text-2xl"
             >
               Now rebuild what remains — with clarity, calm, strength, and
               purpose.
@@ -299,7 +414,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 0.6 }}
-              className={`${serif.className} mt-8 max-w-2xl text-lg italic leading-relaxed text-white/75 md:text-xl`}
+              className={`${serif.className} mt-5 max-w-2xl text-sm italic leading-relaxed text-white/75 md:mt-8 md:text-xl`}
             >
               Whether the storm was{" "}
               {stormMirrors.map((s, i) => (
@@ -315,17 +430,17 @@ export default function Home() {
               — you&apos;re in the right place.
             </motion.p>
 
-            <div className="mt-12 flex flex-col gap-5 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-5 md:mt-12">
               <Link
                 href="/start-here"
-                className="group relative overflow-hidden rounded-none border border-white/20 bg-white/[0.06] px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-white/[0.12]"
+                className="group relative overflow-hidden rounded-none border border-white/20 bg-white/[0.06] px-6 py-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-white/[0.12] md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
               >
                 <span className="relative z-10">Begin Today</span>
                 <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
               </Link>
               <Link
                 href="/roadmap"
-                className="group relative overflow-hidden rounded-none border border-white/20 bg-white/[0.06] px-10 py-5 text-center text-sm font-bold uppercase tracking-[0.25em] text-white transition hover:bg-white/[0.12]"
+                className="group relative overflow-hidden rounded-none border border-white/20 bg-white/[0.06] px-6 py-4 text-center text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-white/[0.12] md:px-10 md:py-5 md:text-sm md:tracking-[0.25em]"
               >
                 <span className="relative z-10">See What&apos;s Ahead</span>
                 <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
@@ -337,7 +452,7 @@ export default function Home() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1.2, delay: 1 }}
-              className="mt-10 text-xs font-semibold uppercase tracking-[0.3em] text-white/60"
+              className="mt-6 text-[10px] font-semibold uppercase tracking-[0.3em] text-white/60 md:mt-10 md:text-xs"
             >
               <span className="text-[#e8c896]">
                 {newMembersThisWeek === 1
@@ -351,43 +466,107 @@ export default function Home() {
       </section>
 
       {/* BREATHING MODULE — 60-second first commitment */}
-      <section className="relative z-20 px-6 py-24">
+      <section
+        ref={breathSectionRef}
+        className="relative z-20 px-6 py-10 md:py-24"
+      >
         <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
-          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.4em] text-white/60 md:mb-6 md:text-xs">
             Before You Scroll Further
           </p>
           <p
-            className={`${serif.className} mb-12 text-3xl italic text-white md:text-4xl`}
+            className={`${serif.className} mb-6 text-2xl italic text-white md:mb-12 md:text-4xl`}
           >
             Take sixty seconds.
           </p>
-          <motion.div
-            animate={{
-              scale: breathPhase === "inhale" ? 1.4 : 1,
-              opacity: breathPhase === "inhale" ? 0.95 : 0.6,
-            }}
-            transition={{ duration: 4, ease: "easeInOut" }}
-            className="flex h-44 w-44 items-center justify-center rounded-full border border-[#c4934e]/40"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(196,147,78,0.22) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
-            }}
-          >
-            <span
-              className={`${serif.className} text-2xl italic text-white/90`}
+
+          {/* Breath circle + progress ring.
+              The ring is at a fixed size; the inner motion.div pulses
+              between 1x and 1.4x scale safely within. pathLength=60
+              maps the stroke directly to seconds so dashoffset is just
+              (60 - elapsed). 1s linear transition tracks the per-second
+              tick smoothly. */}
+          <div className="relative flex h-52 w-52 items-center justify-center md:h-72 md:w-72">
+            <svg
+              className="absolute inset-0 h-full w-full -rotate-90"
+              viewBox="0 0 100 100"
+              aria-hidden="true"
             >
-              {breathPhase === "inhale" ? "Inhale" : "Exhale"}
-            </span>
-          </motion.div>
-          <p className="mt-10 max-w-md text-sm leading-relaxed text-white/65">
-            One breath is enough to begin. The rest will follow.
-          </p>
+              <circle
+                cx="50"
+                cy="50"
+                r="46"
+                fill="none"
+                stroke="#c4934e"
+                strokeOpacity="0.18"
+                strokeWidth="0.6"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="46"
+                fill="none"
+                stroke="#c4934e"
+                strokeWidth="1.1"
+                strokeLinecap="round"
+                pathLength={60}
+                strokeDasharray={60}
+                strokeDashoffset={60 - breathSecondsElapsed}
+                style={{ transition: "stroke-dashoffset 1s linear" }}
+              />
+            </svg>
+            <motion.div
+              animate={{
+                scale: breathPhase === "inhale" ? 1.4 : 1,
+                opacity: breathPhase === "inhale" ? 0.95 : 0.6,
+              }}
+              transition={{ duration: 4, ease: "easeInOut" }}
+              className="flex h-32 w-32 items-center justify-center rounded-full border border-[#c4934e]/40 md:h-44 md:w-44"
+              style={{
+                background:
+                  "radial-gradient(circle, rgba(196,147,78,0.22) 0%, rgba(196,147,78,0.04) 70%, transparent 100%)",
+              }}
+            >
+              <span
+                className={`${serif.className} text-xl italic text-white/90 md:text-2xl`}
+              >
+                {breathPhase === "inhale" ? "Inhale" : "Exhale"}
+              </span>
+            </motion.div>
+          </div>
+
+          <AnimatePresence>
+            {breathSecondsElapsed >= 60 ? (
+              <motion.p
+                key="breath-complete"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className={`${serif.className} mt-6 max-w-md text-base italic leading-relaxed text-[#c4934e] md:mt-10 md:text-lg`}
+              >
+                Sixty seconds. Well done. The harbor is patient.
+              </motion.p>
+            ) : (
+              <motion.p
+                key="breath-prompt"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="mt-6 max-w-md text-xs leading-relaxed text-white/65 md:mt-10 md:text-sm"
+              >
+                One breath is enough to begin. The rest will follow.
+              </motion.p>
+            )}
+          </AnimatePresence>
         </div>
       </section>
 
-      {/* THREE PILLARS */}
+      {/* THREE PILLARS — horizontal swipe on mobile, 3-col grid on desktop.
+          The flex/grid switcheroo at md: keeps a single markup block.
+          On mobile the next card peeks at the right edge (pr-8) so members
+          immediately understand they can swipe — no arrows or dots needed,
+          which fits Stone Harbor's quieter tone. */}
       <FloatingWarmPanel bg="bg-[#f3efe7]" grainId="grain-cards">
-        <div className="grid gap-8 md:grid-cols-3">
+        <div className="hide-scrollbar flex gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:pr-0">
           {[
             {
               number: "01",
@@ -411,17 +590,17 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 0.6, delay: idx * 0.12 }}
-              className="border-l border-stone-300 pl-8"
+              className="snap-start shrink-0 w-[85%] border-l border-stone-300 pl-5 md:w-auto md:shrink md:pl-8"
             >
-              <p className="mb-6 text-sm font-semibold text-[#a9793d]">
+              <p className="mb-3 text-sm font-semibold text-[#a9793d] md:mb-6">
                 {item.number}
               </p>
               <h3
-                className={`${serif.className} mb-5 text-4xl font-medium text-stone-900`}
+                className={`${serif.className} mb-3 text-3xl font-medium text-stone-900 md:mb-5 md:text-4xl`}
               >
                 {item.title}
               </h3>
-              <div className="mb-5 h-[2px] w-10 bg-[#a9793d]" />
+              <div className="mb-3 h-[2px] w-10 bg-[#a9793d] md:mb-5" />
               <p className="max-w-xs leading-relaxed text-stone-600">
                 {item.text}
               </p>
@@ -431,7 +610,7 @@ export default function Home() {
       </FloatingWarmPanel>
 
       {/* PULL QUOTE — the screenshot moment */}
-      <section className="relative z-20 px-6 py-28">
+      <section className="relative z-20 px-6 py-12 md:py-28">
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -440,13 +619,13 @@ export default function Home() {
           className="mx-auto max-w-4xl text-center"
         >
           <p
-            className={`${serif.className} text-4xl italic leading-tight text-white/95 md:text-6xl`}
+            className={`${serif.className} text-2xl italic leading-tight text-white/95 md:text-6xl`}
           >
             &ldquo;You don&apos;t need to be fixed.
             <br />
             You need to be found.&rdquo;
           </p>
-          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.4em] text-[#c4934e]">
+          <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.4em] text-[#c4934e] md:mt-8 md:text-xs">
             — Stone Harbor
           </p>
         </motion.div>
@@ -454,30 +633,45 @@ export default function Home() {
 
       {/* JOURNEY SELECTOR */}
       <FloatingWarmPanel bg="bg-[#efe8dc]" grainId="grain-journey">
-        <div className="grid gap-12 md:grid-cols-[0.9fr_1.1fr] md:items-center">
+        <div className="grid gap-6 md:grid-cols-[0.9fr_1.1fr] md:items-center md:gap-12">
           <div>
-            <p className="mb-5 text-sm font-semibold uppercase tracking-[0.3em] text-[#a9793d]">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#a9793d] md:mb-5 md:text-sm">
               Your Recovery Journey
             </p>
             <h2
-              className={`${serif.className} text-5xl font-medium leading-tight text-stone-900 md:text-7xl`}
+              className={`${serif.className} text-3xl font-medium leading-tight text-stone-900 md:text-7xl`}
             >
               Where are you right now?
             </h2>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-stone-600">
+            <p className="mt-4 max-w-xl text-sm leading-relaxed text-stone-600 md:mt-6 md:text-lg">
               Choose the answer that feels closest. Stone Harbor will guide you
               toward the next grounded step.
             </p>
           </div>
-          <div className="border border-stone-200 bg-white p-6 shadow-[0_18px_60px_rgba(0,0,0,0.12)]">
-            <div className="grid gap-3">
+          <div className="min-w-0 border border-stone-200 bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.12)] md:p-6">
+            {/* Option buttons — horizontal swipe on mobile, vertical stack on desktop.
+                Tap still selects; the swipe just makes the options take ~150px instead
+                of ~250px of vertical space on phones. The description card below
+                updates the same way it does today.
+
+                min-w-0 on this flex container AND its parent grid item (the white
+                card above) is critical: CSS Grid items default to min-width:auto
+                which equals their content's intrinsic min-width. Without min-w-0,
+                the shrink-0 flex children would grow the grid item past the
+                viewport, stretching the whole grid column and clipping the left
+                column's copy. */}
+            <div
+              ref={journeyCarouselRef}
+              className="hide-scrollbar flex min-w-0 gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:grid md:gap-3 md:overflow-visible md:pr-0"
+            >
               {Object.entries(journeyOptions).map(([key, option]) => {
                 const active = selectedPath === key;
                 return (
                   <button
                     key={key}
+                    data-option={key}
                     onClick={() => setSelectedPath(key as JourneyKey)}
-                    className={`border px-6 py-5 text-left transition focus:outline-none focus:ring-2 focus:ring-[#586558] ${
+                    className={`snap-start shrink-0 w-[80%] border px-4 py-4 text-left transition focus:outline-none focus:ring-2 focus:ring-[#586558] md:w-full md:shrink md:px-6 md:py-5 ${
                       active
                         ? "bg-[#f3efe7]"
                         : "border-stone-200 bg-white hover:border-stone-300"
@@ -508,7 +702,7 @@ export default function Home() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.35 }}
-                className="mt-8 border border-stone-200 bg-[#f5f0e8] p-8"
+                className="mt-5 border border-stone-200 bg-[#f5f0e8] p-5 md:mt-8 md:p-8"
               >
                 <p
                   className="mb-3 text-xs font-bold uppercase tracking-[0.3em]"
@@ -517,16 +711,16 @@ export default function Home() {
                   {selectedJourney.identity}
                 </p>
                 <h3
-                  className={`${serif.className} text-4xl font-medium text-stone-900`}
+                  className={`${serif.className} text-2xl font-medium text-stone-900 md:text-4xl`}
                 >
                   {selectedJourney.title}
                 </h3>
-                <p className="mt-4 leading-relaxed text-stone-600">
+                <p className="mt-3 text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
                   {selectedJourney.text}
                 </p>
                 <Link
                   href="/start-here"
-                  className="mt-7 inline-flex rounded-none border border-[#f4d7a1]/50 px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:scale-105"
+                  className="mt-5 inline-flex rounded-none border border-[#f4d7a1]/50 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:scale-105 md:mt-7 md:px-8 md:py-4 md:text-sm"
                   style={{ backgroundColor: selectedJourney.accent }}
                 >
                   {selectedJourney.action}
@@ -538,12 +732,12 @@ export default function Home() {
       </FloatingWarmPanel>
 
       {/* TRUST STRIP — clinical credibility + privacy */}
-      <section className="relative z-20 px-6 py-24">
+      <section className="relative z-20 px-6 py-12 md:py-24">
         <div className="mx-auto max-w-5xl">
-          <p className="mb-8 text-center text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
+          <p className="mb-5 text-center text-[10px] font-semibold uppercase tracking-[0.4em] text-white/60 md:mb-8 md:text-xs">
             Built On Proven Practice
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 text-sm uppercase tracking-[0.25em] text-white/75">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[11px] uppercase tracking-[0.22em] text-white/75 md:gap-x-12 md:gap-y-6 md:text-sm md:tracking-[0.25em]">
             <span>Internal Family Systems</span>
             <span className="text-[#c4934e]">·</span>
             <span>Acceptance &amp; Commitment</span>
@@ -552,7 +746,7 @@ export default function Home() {
             <span className="text-[#c4934e]">·</span>
             <span>Stoic Discipline</span>
           </div>
-          <p className="mt-10 text-center text-xs leading-relaxed text-white/55">
+          <p className="mt-6 text-center text-[11px] leading-relaxed text-white/55 md:mt-10 md:text-xs">
             Your reflections, your journey, your data — yours alone. Encrypted.
             Never sold. Never shared.
           </p>
@@ -560,8 +754,8 @@ export default function Home() {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-20 border-t border-white/10 bg-[#0A0A0B]/70 px-6 py-16 backdrop-blur">
-        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-4">
+      <footer className="relative z-20 border-t border-white/10 bg-[#0A0A0B]/70 px-6 py-10 backdrop-blur md:py-16">
+        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-4 md:gap-10">
           <div>
             <p className="text-xl font-semibold uppercase tracking-[0.28em] text-[#c4934e]">
               Stone Harbor
@@ -624,8 +818,8 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="mx-auto mt-16 max-w-7xl border-t border-white/10 pt-8 text-center">
-          <p className={`${serif.className} text-lg italic text-white/70`}>
+        <div className="mx-auto mt-8 max-w-7xl border-t border-white/10 pt-6 text-center md:mt-16 md:pt-8">
+          <p className={`${serif.className} text-base italic text-white/70 md:text-lg`}>
             The harbor is patient.
           </p>
         </div>
@@ -646,7 +840,7 @@ function FloatingWarmPanel({ children, bg, grainId }: PanelProps) {
       {/* Top edge bleed — softens the hard horizontal cut */}
       <div className="pointer-events-none absolute left-0 right-0 top-0 z-20 h-16 bg-gradient-to-b from-black/30 to-transparent" />
       <div
-        className={`relative w-full border-y border-white/30 px-6 py-12 shadow-[0_35px_120px_rgba(0,0,0,0.32)] md:px-20 md:py-16 ${bg}`}
+        className={`relative w-full border-y border-white/30 px-5 py-8 shadow-[0_35px_120px_rgba(0,0,0,0.32)] md:px-20 md:py-16 ${bg}`}
       >
         {/* Paper grain on the cream — gives it soul, not slickness */}
         <svg

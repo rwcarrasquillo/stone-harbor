@@ -28,6 +28,10 @@ import {
 } from "@/app/components/icons";
 import { tomorrowsTopic } from "@/lib/dailyPrompts";
 import { Toast, type ToastState } from "@/app/components/toast";
+import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
+import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
+import { TodayIntention } from "@/app/components/todayIntention";
+import { X, Wind, Heart, Users, BookOpen } from "lucide-react";
 import {
   dismissalKey,
   resolveActiveAcknowledgment,
@@ -179,6 +183,10 @@ export default function DashboardPage() {
     total_steps: number;
   } | null>(null);
   const [newReadCount, setNewReadCount] = useState<number>(0);
+  // Greeting strip — on mobile the 4 cells cycle through one at a time
+  // with a fade transition. Desktop renders all four in a row and
+  // ignores this index entirely.
+  const [greetingIndex, setGreetingIndex] = useState(0);
   const [postBody, setPostBody] = useState("");
   const [postPrivacy, setPostPrivacy] = useState("members");
   const [memberPosts, setMemberPosts] = useState<MemberPost[]>([]);
@@ -763,6 +771,24 @@ export default function DashboardPage() {
     checkUser();
   }, []);
 
+  /**
+   * Auto-cycle the mobile greeting strip every 5.5 seconds. Long
+   * enough to read each cell, short enough that the page never feels
+   * static. Desktop ignores this state — the grid renders all three
+   * cells side-by-side anyway. Cleaned up on unmount.
+   *
+   * The strip used to have four cards including a "Good Morning /
+   * Rafael" cell, but PersonalizedGreeting now provides that
+   * attunement higher up the page, so the strip dropped to three
+   * (Streak / Tomorrow / Brotherhood) to remove the echo.
+   */
+  useEffect(() => {
+    const id = setInterval(() => {
+      setGreetingIndex((i) => (i + 1) % 3);
+    }, 5500);
+    return () => clearInterval(id);
+  }, []);
+
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
@@ -912,35 +938,37 @@ export default function DashboardPage() {
         }}
       />
 
-      <section className="relative z-10 mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <section className="relative z-10 mx-auto max-w-7xl px-3 py-4 md:px-8 md:py-8">
         {/* TOP NAV */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-8 md:gap-4">
           <Link href="/" className="group flex flex-col leading-none no-underline">
-            <span className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d] transition group-hover:text-[#8d6432]">
+            <span className="text-sm font-bold uppercase tracking-[0.22em] text-[#a9793d] transition group-hover:text-[#8d6432] md:text-base md:tracking-[0.28em]">
               ← Stone Harbor
             </span>
-            <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
+            <span className="mt-1 hidden text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70 md:block">
               Men&apos;s Mental Wellness
             </span>
           </Link>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2 md:gap-3">
             <Link
               href="/welcome"
-              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+              aria-label="Edit profile"
+              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 p-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:px-6"
             >
-              <span className="relative z-10 inline-flex items-center gap-2">
+              <span className="relative z-10 inline-flex items-center md:gap-2">
                 <EditIcon size={14} />
-                Edit Profile
+                <span className="hidden md:inline">Edit Profile</span>
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
             </Link>
             <Link
               href="/messages"
-              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+              aria-label="Messages"
+              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 p-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:px-6"
             >
-              <span className="relative z-10 inline-flex items-center gap-2">
+              <span className="relative z-10 inline-flex items-center md:gap-2">
                 <Message size={14} />
-                Messages
+                <span className="hidden md:inline">Messages</span>
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
               {unreadMessageCount > 0 && (
@@ -951,16 +979,26 @@ export default function DashboardPage() {
             </Link>
             <button
               onClick={handleLogout}
-              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+              aria-label="Log out"
+              className="group relative overflow-hidden rounded-none border border-stone-300 bg-white/70 p-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:px-6"
             >
-              <span className="relative z-10 inline-flex items-center gap-2">
+              <span className="relative z-10 inline-flex items-center md:gap-2">
                 <Logout size={14} />
-                Logout
+                <span className="hidden md:inline">Logout</span>
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
             </button>
           </div>
         </div>
+
+        {/* WELCOME — time + days-aware greeting. The "I'm seen" moment.
+            Replaces the cover banner / avatar hero that used to live here;
+            those have moved to /welcome where they belong (profile space,
+            not session space). */}
+        <PersonalizedGreeting
+          name={profile?.display_name || profile?.username || null}
+          userId={userId}
+        />
 
         {/* ACKNOWLEDGMENT TILE — quiet recognition on hard days.
             Surfaces on Thanksgiving, Christmas Eve/Day, New Year's Eve,
@@ -975,37 +1013,40 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.7, ease: "easeOut" }}
-              className="mb-6 overflow-hidden border-l-[3px] bg-[#f8f4ed] px-6 py-7 shadow-[0_10px_30px_rgba(0,0,0,0.06)] md:px-10"
+              className="relative mb-4 overflow-hidden border-l-[3px] bg-[#f8f4ed] px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] md:mb-6 md:px-10 md:py-7"
               style={{ borderLeftColor: GOLD_DEEP }}
             >
-              <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+              {/* Mobile: X icon top-right for dismiss. The "don't show again"
+                  option moves to a small underline link below the body copy
+                  so it doesn't crowd the corner. */}
+              <button
+                type="button"
+                disabled={ackDismissing}
+                onClick={() => dismissAcknowledgment(false)}
+                aria-label="Dismiss"
+                className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center text-stone-400 transition hover:text-[#a9793d] disabled:opacity-50 md:right-3 md:top-3"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+
+              <div className="flex flex-col gap-3 pr-8 md:flex-row md:items-start md:justify-between md:gap-5 md:pr-10">
                 <div className="min-w-0 max-w-3xl">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#a9793d]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#a9793d] md:tracking-[0.32em]">
                     {acknowledgment.eyebrow}
                   </p>
                   <p
-                    className={`${serif.className} mt-3 text-2xl italic leading-[1.25] text-stone-900 md:text-3xl`}
+                    className={`${serif.className} mt-2 text-xl italic leading-[1.2] text-stone-900 md:mt-3 md:text-3xl`}
                   >
                     {acknowledgment.headline}
                   </p>
-                  <p className="mt-4 text-sm leading-relaxed text-stone-600 md:text-base">
+                  <p className="mt-2 text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
                     {acknowledgment.body}
                   </p>
-                </div>
-                <div className="flex shrink-0 flex-col items-stretch gap-2 md:items-end">
-                  <button
-                    type="button"
-                    disabled={ackDismissing}
-                    onClick={() => dismissAcknowledgment(false)}
-                    className="border border-stone-300 bg-white/70 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white disabled:opacity-50"
-                  >
-                    Dismiss
-                  </button>
                   <button
                     type="button"
                     disabled={ackDismissing}
                     onClick={() => dismissAcknowledgment(true)}
-                    className="text-[11px] text-stone-500 underline-offset-4 transition hover:text-[#a9793d] hover:underline disabled:opacity-50"
+                    className="mt-3 text-[10px] text-stone-500 underline-offset-4 transition hover:text-[#a9793d] hover:underline disabled:opacity-50 md:mt-4 md:text-[11px]"
                   >
                     Don&apos;t show these again
                   </button>
@@ -1038,93 +1079,222 @@ export default function DashboardPage() {
           </AnimatePresence>
         )}
 
-        {/* GREETING STRIP — daily ritual + retention hooks */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8 grid gap-6 border-y border-stone-200 bg-white/40 px-6 py-6 backdrop-blur-sm md:grid-cols-4"
+        {/* DAILY REFLECTION — moved above the greeting strip per the
+            psychoanalytic restructure (meaning before metrics). The
+            quote is the day's emotional anchor and reads most
+            strongly when it's the first inspirational element after
+            the personalized greeting. */}
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.7 }}
+          className="mb-6 md:mb-8"
         >
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
-              {timeGreeting()}
-            </p>
-            <p
-              className={`${serif.className} mt-2 text-2xl italic`}
-              style={{ color: accent }}
-            >
-              {profile?.display_name?.split(" ")[0] || "Friend"}.
-            </p>
-            <p
-              className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em]"
-              style={{ color: accent }}
-            >
-              {identityLine(stage)}
-            </p>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <Flame size={14} className="text-[#a9793d]" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
-                Streak
-              </p>
-            </div>
-            <p
-              className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
-            >
-              {streak === null
-                ? "—"
-                : streak === 0
-                  ? "Begin today."
-                  : streak === 1
-                    ? "Day 1."
-                    : `Day ${streak}.`}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-stone-500">
-              Missing a day doesn&apos;t reset you.
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
-              Tomorrow
-            </p>
-            <p
-              className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
-            >
-              A question on {tomorrowsTopic()}.
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-stone-500">
-              Three sentences. That&apos;s all.
-            </p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
-              Brotherhood
-            </p>
-            <p
-              className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
-            >
-              {dailyReflections === 0
-                ? "Be the first today."
-                : dailyReflections === 1
-                  ? "1 man reflected today."
-                  : `${dailyReflections} men reflected today.`}
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-stone-500">
-              You&apos;re not the only one here.
-            </p>
-          </div>
-        </motion.div>
+          <div className="relative overflow-hidden rounded-none border border-stone-200 bg-gradient-to-br from-[#f8f4ed] via-[#f3efe7] to-[#efe8dc] px-4 py-6 shadow-[0_14px_40px_rgba(0,0,0,0.06)] md:px-10 md:py-12">
+            <RotatingNatureBackdrop
+              images={[
+                "/nature/alpine-lake-trees-mountains.jpg",
+                "/nature/sunrise-mountain-lake-icy-rocks.jpg",
+                "/nature/trees-lake-mountain-daytime.jpg",
+                "/nature/lake-mountain-alps.jpg",
+              ]}
+              opacity={0.12}
+              rotationMs={18000}
+              imageFilter="sepia(0.15)"
+            />
 
-        {/* PROFILE CARD */}
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04] mix-blend-multiply"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <filter id="quote-grain">
+                <feTurbulence
+                  type="fractalNoise"
+                  baseFrequency="0.85"
+                  numOctaves="2"
+                />
+                <feColorMatrix type="saturate" values="0" />
+              </filter>
+              <rect width="100%" height="100%" filter="url(#quote-grain)" />
+            </svg>
+            <div className="relative mx-auto max-w-5xl text-center">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.32em] text-[#a9793d] md:mb-4 md:tracking-[0.38em]">
+                Today&apos;s Reflection
+              </p>
+              {dailyQuote ? (
+                <>
+                  <p
+                    className={`${serif.className} mx-auto max-w-[1100px] text-lg font-medium italic leading-[1.2] tracking-[-0.015em] text-stone-900 md:text-4xl xl:text-[2.85rem]`}
+                  >
+                    &ldquo;{dailyQuote.quote_text}&rdquo;
+                  </p>
+                  <div className="mt-3 flex justify-center md:mt-6">
+                    <span
+                      className="border bg-white/60 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] shadow-sm md:px-4 md:py-1.5 md:tracking-[0.24em]"
+                      style={{
+                        borderColor: stageAccent(dailyQuote.theme) + "59",
+                        color: stageAccent(dailyQuote.theme),
+                      }}
+                    >
+                      {dailyQuote.theme}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p
+                    className={`${serif.className} mx-auto max-w-4xl text-2xl font-medium italic leading-[1.18] tracking-[-0.015em] text-stone-900 md:text-4xl`}
+                  >
+                    Your reflection is being prepared.
+                  </p>
+                  <p className="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-stone-500">
+                    No active quote was found for today&apos;s {quoteStage}{" "}
+                    stage. Generate this week&apos;s reflections and refresh
+                    your harbor.
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </motion.section>
+
+        {/* GREETING STRIP — orientation cards (Streak / Tomorrow /
+            Brotherhood). Desktop: three cells in a row. Mobile: one
+            cell at a time cycling every 5.5 seconds with a fade
+            transition, with three small dots below for manual
+            navigation. The PersonalizedGreeting higher up the page
+            now covers the "Good Morning, Rafael" attunement that
+            used to live in a fourth cell here. */}
+        {(() => {
+          // Define the four cells once, then render differently per
+          // viewport. Putting them in an array keeps DOM order stable
+          // and lets AnimatePresence key by the active index without
+          // confusing the diff.
+          // PersonalizedGreeting above the page already provides the
+          // time-of-day greeting + identity line. The strip is now
+          // three orientation cards (Streak / Tomorrow / Brotherhood)
+          // — no duplicate "Good Morning" cell.
+          const cells = [
+            // 0 — Streak
+            <div key="streak">
+              <div className="flex items-center gap-2">
+                <Flame size={14} className="text-[#a9793d]" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+                  Streak
+                </p>
+              </div>
+              <p
+                className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+              >
+                {streak === null
+                  ? "—"
+                  : streak === 0
+                    ? "Begin today."
+                    : streak === 1
+                      ? "Day 1."
+                      : `Day ${streak}.`}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-stone-500">
+                Missing a day doesn&apos;t reset you.
+              </p>
+            </div>,
+            // 1 — Tomorrow
+            <div key="tomorrow">
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+                Tomorrow
+              </p>
+              <p
+                className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+              >
+                A question on {tomorrowsTopic()}.
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-stone-500">
+                Three sentences. That&apos;s all.
+              </p>
+            </div>,
+            // 2 — Brotherhood
+            <div key="brotherhood">
+              <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-stone-500">
+                Brotherhood
+              </p>
+              <p
+                className={`${serif.className} mt-2 text-2xl italic text-stone-900`}
+              >
+                {dailyReflections === 0
+                  ? "Be the first today."
+                  : dailyReflections === 1
+                    ? "1 man reflected today."
+                    : `${dailyReflections} men reflected today.`}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-stone-500">
+                You&apos;re not the only one here.
+              </p>
+            </div>,
+          ];
+
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="mb-6 border-y border-stone-200 bg-white/40 backdrop-blur-sm md:mb-8"
+            >
+              {/* DESKTOP: three-column grid (Streak / Tomorrow / Brotherhood) */}
+              <div className="hidden gap-6 px-6 py-6 md:grid md:grid-cols-3">
+                {cells}
+              </div>
+
+              {/* MOBILE: single fading card + dot navigator */}
+              <div className="px-4 py-5 md:hidden">
+                <div className="relative min-h-[6.5rem]">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={greetingIndex}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.5, ease: "easeInOut" }}
+                    >
+                      {cells[greetingIndex]}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                <div className="mt-4 flex justify-center gap-2">
+                  {cells.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setGreetingIndex(i)}
+                      aria-label={`Show card ${i + 1} of ${cells.length}`}
+                      className={`h-1 rounded-full transition-all duration-500 ${
+                        i === greetingIndex
+                          ? "w-5 bg-[#a9793d]"
+                          : "w-1 bg-stone-300 hover:bg-stone-400"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
+
+        {/* PROFILE CARD — hidden on the dashboard per the
+            psychoanalytic restructure. Identity belongs at /welcome
+            (profile editor), not in a session space. The full block
+            stays in the source for now so the cover-image carousel
+            logic, viewer, etc. are easy to migrate to /welcome in a
+            follow-up. Hidden via `hidden` class — display:none. */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="mb-10 overflow-hidden rounded-none border border-stone-200 bg-[#f8f4ed] shadow-[0_20px_70px_rgba(0,0,0,0.08)]"
+          className="hidden mb-10 overflow-hidden rounded-none border border-stone-200 bg-[#f8f4ed] shadow-[0_20px_70px_rgba(0,0,0,0.08)]"
         >
           <div
-            className="group relative h-64 bg-cover bg-center"
+            className="group relative h-36 bg-cover bg-center md:h-64"
             style={{
               backgroundImage: activeCover
                 ? `url(${activeCover})`
@@ -1162,13 +1332,13 @@ export default function DashboardPage() {
               onClick={() => activeCover && setViewerOpen(true)}
               className="absolute inset-0 cursor-pointer"
             />
-            <div className="absolute bottom-5 right-5 z-20 rounded-full border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 opacity-0 backdrop-blur-md transition duration-300 group-hover:opacity-100">
+            <div className="absolute bottom-3 right-3 z-20 rounded-full border border-white/15 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 opacity-0 backdrop-blur-md transition duration-300 group-hover:opacity-100 md:bottom-5 md:right-5">
               {coverImages.length > 0
                 ? `${currentCoverIndex + 1} of ${coverImages.length}`
                 : "No Cover History"}
             </div>
-            <div className="absolute -bottom-14 left-8">
-              <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-[#f8f4ed] bg-[#efe8dc] shadow-xl">
+            <div className="absolute -bottom-10 left-4 md:-bottom-14 md:left-8">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-4 border-[#f8f4ed] bg-[#efe8dc] shadow-xl md:h-32 md:w-32">
                 {profile?.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -1177,25 +1347,25 @@ export default function DashboardPage() {
                   />
                 ) : (
                   <AnchorIcon
-                    size={52}
+                    size={32}
                     strokeWidth={1.25}
-                    className="text-[#a9793d]"
+                    className="text-[#a9793d] md:size-[52px]"
                   />
                 )}
               </div>
             </div>
           </div>
-          <div className="px-8 pb-8 pt-16">
-            <div className="grid gap-8 md:grid-cols-[1.05fr_auto_0.95fr] md:items-start">
+          <div className="px-4 pb-5 pt-12 md:px-8 md:pb-8 md:pt-16">
+            <div className="grid gap-5 md:grid-cols-[1.05fr_auto_0.95fr] md:items-start md:gap-8">
               <div>
                 <p
-                  className="text-xs font-bold uppercase tracking-[0.22em]"
+                  className="text-[10px] font-bold uppercase tracking-[0.22em] md:text-xs"
                   style={{ color: accent }}
                 >
                   {identityLine(stage)}
                 </p>
                 <h1
-                  className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-stone-900 md:text-7xl`}
+                  className={`${serif.className} mt-2 text-3xl font-medium leading-tight text-stone-900 md:mt-3 md:text-7xl`}
                 >
                   {profile?.display_name || "Stone Harbor Member"}
                 </h1>
@@ -1234,152 +1404,119 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* DAILY REFLECTION */}
-        <motion.section
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7 }}
-          className="mb-8"
-        >
-          <div className="relative overflow-hidden rounded-none border border-stone-200 bg-gradient-to-br from-[#f8f4ed] via-[#f3efe7] to-[#efe8dc] px-6 py-10 shadow-[0_14px_40px_rgba(0,0,0,0.06)] md:px-10 md:py-12">
-            {/* paper grain inside the panel */}
-            <svg
-              className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04] mix-blend-multiply"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <filter id="quote-grain">
-                <feTurbulence
-                  type="fractalNoise"
-                  baseFrequency="0.85"
-                  numOctaves="2"
-                />
-                <feColorMatrix type="saturate" values="0" />
-              </filter>
-              <rect width="100%" height="100%" filter="url(#quote-grain)" />
-            </svg>
-            <div className="relative mx-auto max-w-5xl text-center">
-              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.38em] text-[#a9793d]">
-                Today&apos;s Reflection
-              </p>
-              {dailyQuote ? (
-                <>
-                  <p
-                    className={`${serif.className} mx-auto max-w-[1100px] text-2xl font-medium italic leading-[1.18] tracking-[-0.015em] text-stone-900 md:text-4xl xl:text-[2.85rem]`}
-                  >
-                    &ldquo;{dailyQuote.quote_text}&rdquo;
-                  </p>
-                  <div className="mt-6 flex justify-center">
-                    <span
-                      className="border bg-white/60 px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.24em] shadow-sm"
-                      style={{
-                        borderColor: stageAccent(dailyQuote.theme) + "59",
-                        color: stageAccent(dailyQuote.theme),
-                      }}
-                    >
-                      {dailyQuote.theme}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p
-                    className={`${serif.className} mx-auto max-w-4xl text-2xl font-medium italic leading-[1.18] tracking-[-0.015em] text-stone-900 md:text-4xl`}
-                  >
-                    Your reflection is being prepared.
-                  </p>
-                  <p className="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-stone-500">
-                    No active quote was found for today&apos;s {quoteStage}{" "}
-                    stage. Generate this week&apos;s reflections and refresh
-                    your harbor.
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </motion.section>
+        {/* DAILY REFLECTION was relocated higher up the page (above the
+            greeting strip) per the psychoanalytic restructure. Meaning
+            before metrics. See above. */}
 
-        {/* DAILY BREATH — compact return ritual */}
+        {/* TODAY'S INTENTION — optional. Persists for the day via
+            localStorage keyed by user + date. The rotating placeholder
+            gives the field gentle energy when blank. */}
+        <TodayIntention userId={userId} />
+
+        {/* MEDITATION ENTRY — quiet doorway to the full /meditation
+            experience (image rotation + breath circle + ambient audio).
+            On mobile this is a compact circular button with serif copy.
+            On desktop a wider banner that mirrors the original Daily
+            Breath layout. */}
         <motion.section
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="mb-12 flex flex-col items-center gap-6 border-y border-stone-200 px-6 py-10 md:flex-row md:justify-center md:gap-12"
+          className="mb-10 md:mb-12"
         >
-          <motion.div
-            animate={{
-              scale: breathPhase === "inhale" ? 1.25 : 1,
-              opacity: breathPhase === "inhale" ? 0.95 : 0.55,
-            }}
-            transition={{ duration: 4, ease: "easeInOut" }}
-            className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border"
-            style={{
-              borderColor: accent + "66",
-              background: `radial-gradient(circle, ${accent}33 0%, ${accent}0A 70%, transparent 100%)`,
-            }}
+          <Link
+            href="/meditation"
+            className="group flex flex-col items-center gap-4 border-y border-stone-200 px-6 py-6 transition hover:bg-[#f8f4ed]/40 md:flex-row md:justify-center md:gap-12 md:py-10"
           >
-            <span
-              className={`${serif.className} text-base italic`}
-              style={{ color: accent }}
+            <motion.div
+              animate={{
+                scale: breathPhase === "inhale" ? 1.25 : 1,
+                opacity: breathPhase === "inhale" ? 0.95 : 0.55,
+              }}
+              transition={{ duration: 4, ease: "easeInOut" }}
+              className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border md:h-28 md:w-28"
+              style={{
+                borderColor: accent + "66",
+                background: `radial-gradient(circle, ${accent}33 0%, ${accent}0A 70%, transparent 100%)`,
+              }}
             >
-              {breathPhase === "inhale" ? "Inhale" : "Exhale"}
-            </span>
-          </motion.div>
-          <div className="text-center md:text-left">
-            <p
-              className="text-[10px] font-bold uppercase tracking-[0.32em]"
-              style={{ color: accent }}
-            >
-              Daily Breath
-            </p>
-            <p
-              className={`${serif.className} mt-2 text-3xl italic text-stone-900`}
-            >
-              Sixty seconds, every morning.
-            </p>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-stone-600">
-              One breath at the door of the harbor. Stay as long as you want.
-            </p>
-          </div>
+              <Wind
+                size={22}
+                strokeWidth={1.5}
+                style={{ color: accent }}
+                aria-hidden="true"
+                className="md:hidden"
+              />
+              <span
+                className={`${serif.className} hidden text-base italic md:inline`}
+                style={{ color: accent }}
+              >
+                {breathPhase === "inhale" ? "Inhale" : "Exhale"}
+              </span>
+            </motion.div>
+            <div className="text-center md:text-left">
+              <p
+                className="text-[10px] font-bold uppercase tracking-[0.32em]"
+                style={{ color: accent }}
+              >
+                Daily Breath · Open Meditation
+              </p>
+              <p
+                className={`${serif.className} mt-1 text-xl italic text-stone-900 md:mt-2 md:text-3xl`}
+              >
+                Sixty seconds, every morning.
+              </p>
+              <p className="mt-1 max-w-md text-xs leading-relaxed text-stone-600 md:mt-2 md:text-sm">
+                One breath at the door of the harbor. Stay as long as you want.
+              </p>
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400 transition group-hover:text-[#a9793d] md:mt-3">
+                Enter the Meditation →
+              </p>
+            </div>
+          </Link>
         </motion.section>
 
-        {/* TIMELINE COMPOSER + FEED */}
+        {/* TIMELINE COMPOSER + FEED — hidden on mobile per the
+            psychoanalytic restructure. Composing a public post is a
+            deliberate act that belongs inside the Brotherhood door,
+            not the dashboard. Will migrate to /brotherhood in a
+            follow-up. On desktop it remains where it is. */}
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="mb-12"
+          className="hidden md:block md:mb-12"
         >
-          <div className="grid gap-8 lg:grid-cols-[0.42fr_0.58fr]">
+          <div className="grid gap-4 md:gap-8 lg:grid-cols-[0.42fr_0.58fr]">
             <form
               onSubmit={createMemberPost}
-              className="rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]"
+              className="rounded-none border border-white/70 bg-white p-4 shadow-[0_16px_60px_rgba(0,0,0,0.06)] md:p-7"
             >
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.26em] text-[#a9793d] md:mb-4 md:text-xs md:tracking-[0.28em]">
                 Timeline
               </p>
               <h2
-                className={`${serif.className} text-4xl font-medium text-stone-900`}
+                className={`${serif.className} text-xl font-medium text-stone-900 md:text-4xl`}
               >
                 Share an update.
               </h2>
-              <p className="mt-3 text-sm leading-relaxed text-stone-600">
+              <p className="mt-2 hidden text-sm leading-relaxed text-stone-600 md:mt-3 md:block">
                 Post a reflection, milestone, or thought for other Stone Harbor
                 members.
               </p>
               <textarea
                 value={postBody}
                 onChange={(e) => setPostBody(e.target.value)}
-                rows={6}
-                className="mt-6 w-full resize-none rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30"
+                rows={3}
+                className="mt-3 w-full resize-none rounded-none border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-sm outline-none transition focus:border-[#a9793d] focus:ring-2 focus:ring-[#586558]/30 md:mt-6 md:px-5 md:py-4 md:text-base"
                 placeholder="What would you like to share?"
               />
               <select
                 value={postPrivacy}
                 onChange={(e) => setPostPrivacy(e.target.value)}
-                className="mt-4 w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-4 outline-none transition focus:border-[#a9793d]"
+                className="mt-3 w-full rounded-none border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-sm outline-none transition focus:border-[#a9793d] md:mt-4 md:px-5 md:py-4 md:text-base"
               >
                 <option value="members">Members only</option>
                 <option value="private">Private</option>
@@ -1387,21 +1524,21 @@ export default function DashboardPage() {
               <button
                 type="submit"
                 disabled={posting || !postBody.trim()}
-                className="group relative mt-5 w-full overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
+                className="group relative mt-3 w-full overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-60 md:mt-5 md:px-8 md:py-4 md:text-sm"
               >
                 <span className="relative z-10">
                   {posting ? "Posting..." : "Post Update"}
                 </span>
               </button>
             </form>
-            <div className="rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]">
-              <div className="mb-6 flex items-end justify-between gap-4">
+            <div className="rounded-none border border-white/70 bg-white p-4 shadow-[0_16px_60px_rgba(0,0,0,0.06)] md:p-7">
+              <div className="mb-4 flex items-end justify-between gap-3 md:mb-6 md:gap-4">
                 <div>
-                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.26em] text-[#a9793d] md:mb-3 md:text-xs md:tracking-[0.28em]">
                     Member Feed
                   </p>
                   <h2
-                    className={`${serif.className} text-4xl font-medium text-stone-900`}
+                    className={`${serif.className} text-xl font-medium text-stone-900 md:text-4xl`}
                   >
                     Recent posts.
                   </h2>
@@ -1409,25 +1546,25 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={loadMemberPosts}
-                  className="rounded-none border border-stone-300 bg-[#f8f4ed] px-5 py-3 text-xs font-bold uppercase tracking-[0.2em] text-stone-600 transition hover:border-[#a9793d]"
+                  className="rounded-none border border-stone-300 bg-[#f8f4ed] px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-stone-600 transition hover:border-[#a9793d] md:px-5 md:py-3 md:text-xs md:tracking-[0.2em]"
                 >
                   Refresh
                 </button>
               </div>
               {memberPosts.length === 0 ? (
-                <div className="border border-stone-200 bg-[#f8f4ed] p-6 text-stone-600">
+                <div className="border border-stone-200 bg-[#f8f4ed] p-4 text-sm text-stone-600 md:p-6 md:text-base">
                   No timeline posts yet.
                 </div>
               ) : (
-                <div className="max-h-[620px] space-y-5 overflow-y-auto pr-2">
+                <div className="max-h-[360px] space-y-3 overflow-y-auto pr-2 md:max-h-[620px] md:space-y-5">
                   {memberPosts.map((post) => (
                     <article
                       key={post.id}
-                      className="rounded-none border border-stone-200 bg-[#f8f4ed] p-6 transition hover:border-[#a9793d]/40"
+                      className="rounded-none border border-stone-200 bg-[#f8f4ed] p-3 transition hover:border-[#a9793d]/40 md:p-6"
                     >
-                      <div className="mb-4 flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#efe8dc]">
+                      <div className="mb-3 flex items-start justify-between gap-3 md:mb-4 md:gap-4">
+                        <div className="flex items-center gap-3 md:gap-4">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#efe8dc] md:h-12 md:w-12">
                             {post.profiles?.avatar_url ? (
                               <img
                                 src={post.profiles.avatar_url}
@@ -1436,19 +1573,19 @@ export default function DashboardPage() {
                               />
                             ) : (
                               <AnchorIcon
-                                size={20}
+                                size={16}
                                 strokeWidth={1.4}
-                                className="text-[#a9793d]"
+                                className="text-[#a9793d] md:size-5"
                               />
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-stone-900">
+                            <p className="text-sm font-bold text-stone-900 md:text-base">
                               {post.profiles?.display_name ||
                                 post.profiles?.username ||
                                 "Stone Harbor Member"}
                             </p>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-stone-400 md:text-xs md:tracking-[0.18em]">
                               {formatPostDate(post.created_at)} ·{" "}
                               {post.privacy_level === "private"
                                 ? "Private"
@@ -1460,19 +1597,23 @@ export default function DashboardPage() {
                           <button
                             type="button"
                             onClick={() => deleteMemberPost(post.id)}
-                            className="rounded-none border border-stone-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-stone-500 transition hover:border-red-300 hover:text-red-600"
+                            aria-label="Delete post"
+                            className="rounded-none border border-stone-300 p-2 text-stone-500 transition hover:border-red-300 hover:text-red-600 md:px-4 md:py-2"
                           >
-                            Delete
+                            <X size={14} className="md:hidden" aria-hidden="true" />
+                            <span className="hidden text-xs font-bold uppercase tracking-[0.18em] md:inline">
+                              Delete
+                            </span>
                           </button>
                         )}
                       </div>
-                      <p className="whitespace-pre-wrap text-lg leading-relaxed text-stone-700">
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-stone-700 md:text-lg">
                         {post.body}
                       </p>
                       {/* WITH YOU — anonymous solidarity. The poster sees a
                           warm count message; other members see a quieter
                           factual one. Tapping toggles the anchor. */}
-                      <div className="mt-5 flex items-center justify-between gap-4 border-t border-stone-200 pt-4">
+                      <div className="mt-3 flex items-center justify-between gap-3 border-t border-stone-200 pt-3 md:mt-5 md:gap-4 md:pt-4">
                         <WithYouButton
                           isWith={!!post.i_am_with}
                           isOwnPost={post.user_id === userId}
@@ -1497,12 +1638,19 @@ export default function DashboardPage() {
             introExpanded ? "lg:grid-cols-[0.85fr_1.15fr]" : "lg:grid-cols-1"
           }`}
         >
+          {/* ANCHOR / WHO YOU ARE — hidden on the dashboard per the
+              psychoanalytic restructure. Identity belongs at /welcome
+              (full profile editor). Mobile: the "Me" icon in the
+              bottom tab bar takes members there in one tap. Desktop:
+              the icon CTAs in the top header do the same. The aside
+              code stays in source so the AboutRow visualization can
+              be migrated to /welcome in a follow-up. */}
           <motion.aside
             initial={{ opacity: 0, y: 18 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.7 }}
-            className="relative flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]"
+            className="hidden relative flex h-full flex-col rounded-none border border-white/70 bg-white p-7 shadow-[0_16px_60px_rgba(0,0,0,0.06)]"
           >
             <button
               type="button"
@@ -1591,13 +1739,23 @@ export default function DashboardPage() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="h-full"
           >
+            {/* Mobile: horizontal swipe through the four destinations.
+                Desktop: original 2x2 / 4-up grid. The hide-scrollbar +
+                snap-mandatory pattern matches the home pillars carousel —
+                next card peeks on the right edge so the swipe affordance
+                is visible without dots or arrows. */}
             <div
-              className={`grid h-full gap-6 ${
+              className={`hide-scrollbar flex h-full min-w-0 gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:grid md:gap-6 md:overflow-visible md:pr-0 ${
                 introExpanded
                   ? "md:grid-cols-2 md:grid-rows-2"
                   : "md:grid-cols-2 xl:grid-cols-4"
               }`}
             >
+              {/* THE FOUR DOORS — Reflect / Vent / Brotherhood / Breathe.
+                  Each maps to an emotional state, not a feature. The man
+                  picks the door that matches what he arrived with today.
+                  Read + Refine demoted to a secondary "Other doors" row
+                  on desktop only (mobile keeps the focus to four). */}
               <DashboardCard
                 href="/journal"
                 label="Private"
@@ -1606,69 +1764,136 @@ export default function DashboardPage() {
                 Icon={EditIcon}
               />
               <DashboardCard
+                href="/vent"
+                label="Release"
+                title="Vent"
+                text="A blank page, no prompts, no audience. For when you just need to put it down."
+                Icon={Heart}
+              />
+              <DashboardCard
                 href="/messages"
                 label={
                   unreadMessageCount > 0
                     ? `${unreadMessageCount} Unread`
-                    : "Members"
+                    : "Together"
                 }
-                title="Connect"
+                title="Brotherhood"
                 text={
                   unreadMessageCount > 0
                     ? "You have unread member messages waiting."
-                    : "Start private conversations with other Stone Harbor members."
+                    : "Step into the brotherhood. You're not the only one here."
                 }
                 badge={unreadMessageCount}
-                Icon={Message}
+                Icon={Users}
               />
               <DashboardCard
-                href="/members-blog"
-                label={newReadCount > 0 ? `${newReadCount} New` : "Members"}
-                title="Read"
-                text={
-                  newReadCount > 0
-                    ? `${newReadCount} new ${newReadCount === 1 ? "post" : "posts"} in your stage this month.`
-                    : "Protected articles and thoughtful member discussions."
-                }
-                badge={newReadCount}
-                Icon={Book}
-              />
-              <DashboardCard
-                href="/welcome"
-                label="Identity"
-                title="Refine"
-                text="Update your avatar, cover image, privacy defaults, and healing stage."
-                Icon={Settings}
+                href="/meditation"
+                label="Sixty seconds"
+                title="Breathe"
+                text="One breath at the door of the harbor. Stay as long as you want."
+                Icon={Wind}
               />
             </div>
           </motion.section>
         </div>
 
-        {/* ROADMAP PROGRESS — loss-aversion return hook */}
+        {/* BROTHERHOOD WHISPERS — mobile-only compact preview of the
+            three most recent member posts. Tease, not feed. Encourages
+            the member to step further in via the Brotherhood door above
+            without forcing the full feed into the dashboard scroll. */}
+        {memberPosts.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.6 }}
+            className="mt-6 md:hidden"
+            aria-label="Recent brotherhood whispers"
+          >
+            <div className="mb-3 flex items-end justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#a9793d]">
+                From the Brotherhood
+              </p>
+              <Link
+                href="/messages"
+                className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:text-[#a9793d]"
+              >
+                Step further in →
+              </Link>
+            </div>
+            <div className="space-y-2.5">
+              {memberPosts.slice(0, 3).map((post) => (
+                <article
+                  key={post.id}
+                  className="rounded-none border border-stone-200 bg-white/70 p-3"
+                >
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stone-200 bg-[#efe8dc]">
+                      {post.profiles?.avatar_url ? (
+                        <img
+                          src={post.profiles.avatar_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <AnchorIcon
+                          size={12}
+                          strokeWidth={1.5}
+                          className="text-[#a9793d]"
+                        />
+                      )}
+                    </div>
+                    <p className="text-[11px] font-bold text-stone-700">
+                      {post.profiles?.display_name ||
+                        post.profiles?.username ||
+                        "A brother"}
+                    </p>
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400">
+                      · {formatPostDate(post.created_at)}
+                    </p>
+                  </div>
+                  <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
+                    {post.body}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {/* ROADMAP PROGRESS — conditional. Show only if the member
+            has actually started a path. A 0/0 or empty-state progress
+            bar communicates "you're behind" rather than "you have
+            room." On the dashboard this matters a lot psychologically.
+            If they haven't started, the Roadmap door (or /start-here)
+            is where they discover the path. */}
+        {roadmapProgress &&
+          roadmapProgress.total_steps > 0 &&
+          roadmapProgress.completed_steps > 0 && (
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.7 }}
-          className="mt-10 rounded-none border border-stone-200 bg-white/70 p-8 backdrop-blur-sm"
+          className="mt-6 rounded-none border border-stone-200 bg-white/70 p-4 backdrop-blur-sm md:mt-10 md:p-8"
         >
-          <div className="grid gap-6 md:grid-cols-[1.4fr_1fr] md:items-center">
+          <div className="grid gap-4 md:grid-cols-[1.4fr_1fr] md:items-center md:gap-6">
             <div>
               <div
                 className="flex items-center gap-2"
                 style={{ color: accent }}
               >
-                <Roadmap size={16} />
-                <p className="text-xs font-bold uppercase tracking-[0.3em]">
+                <Roadmap size={14} className="md:size-4" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.26em] md:text-xs md:tracking-[0.3em]">
                   Your Roadmap
                 </p>
               </div>
               <h2
-                className={`${serif.className} mt-3 text-4xl font-medium text-stone-900 md:text-5xl`}
+                className={`${serif.className} mt-2 text-2xl font-medium text-stone-900 md:mt-3 md:text-5xl`}
               >
                 Pick up where you left off.
               </h2>
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
                 {roadmapProgress === null ? (
                   <>Loading your roadmap…</>
                 ) : roadmapProgress.total_steps === 0 ? (
@@ -1706,9 +1931,9 @@ export default function DashboardPage() {
               </p>
             </div>
             <div>
-              <div className="mb-3 h-[6px] w-full bg-stone-200">
+              <div className="mb-3 h-1 w-full bg-stone-200 md:h-[6px]">
                 <div
-                  className="h-[6px] transition-all duration-700"
+                  className="h-full transition-all duration-700"
                   style={{
                     width: `${roadmapProgress?.percent ?? 0}%`,
                     backgroundColor: accent,
@@ -1717,7 +1942,7 @@ export default function DashboardPage() {
               </div>
               <Link
                 href="/roadmap"
-                className="group relative inline-block overflow-hidden rounded-none border px-8 py-4 text-sm font-bold uppercase tracking-[0.22em] text-white transition hover:scale-105"
+                className="group relative inline-block overflow-hidden rounded-none border px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:scale-105 md:px-8 md:py-4 md:text-sm md:tracking-[0.22em]"
                 style={{ backgroundColor: accent, borderColor: accent }}
               >
                 <span className="relative z-10">Continue Your Path</span>
@@ -1725,6 +1950,21 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.section>
+        )}
+
+        {/* CLOSING LINE — explicit permission to leave. The opposite
+            of every social product. Stone Harbor wants the member to
+            come back tomorrow, which means making "today's enough"
+            feel like its own small completion. */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.9 }}
+          className={`${serif.className} mt-10 text-center text-sm italic text-stone-500 md:mt-16 md:text-base`}
+        >
+          The harbor will be here tomorrow.
+        </motion.p>
       </section>
 
       {/* COVER IMAGE VIEWER */}
@@ -1799,8 +2039,8 @@ export default function DashboardPage() {
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* FOOTER — 988 crisis line required on every authenticated screen */}
-      <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
-        <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
+      <footer className="relative z-10 mt-6 border-t border-stone-200 bg-[#efe8dc]/70 px-4 py-5 backdrop-blur-sm md:mt-12 md:px-6 md:py-10">
+        <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3 md:items-center md:gap-6">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
               Stone Harbor
@@ -2105,14 +2345,23 @@ function DashboardCard({
   return (
     <Link
       href={href}
-      className="group relative flex h-full flex-col overflow-hidden rounded-none border border-white/70 bg-white p-7 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)]"
+      className="group relative flex h-full w-[78%] shrink-0 snap-start flex-col overflow-hidden rounded-none border border-white/70 bg-white p-5 shadow-[0_12px_40px_rgba(0,0,0,0.05)] transition duration-300 hover:-translate-y-1 hover:border-[#a9793d]/40 hover:shadow-[0_18px_55px_rgba(0,0,0,0.09)] md:w-auto md:p-7"
     >
       {badge > 0 && (
-        <span className="absolute right-5 top-5 z-20 flex h-8 min-w-8 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-xs font-black text-white shadow-[0_8px_20px_rgba(169,121,61,0.35)]">
+        <span className="absolute right-3 top-3 z-20 flex h-7 min-w-7 items-center justify-center border border-[#c4934e] bg-[#a9793d] px-2 text-xs font-black text-white shadow-[0_8px_20px_rgba(169,121,61,0.35)] md:right-5 md:top-5 md:h-8 md:min-w-8">
           {badge}
         </span>
       )}
-      <div className="mb-4 flex items-center gap-3 pr-10">
+      {/* Hero icon block — visually appealing on mobile, where the card is
+          the primary touch target. Larger icon in a tinted circle that
+          echoes Stone Harbor's gold motif. On md+ this collapses back to
+          the inline icon+label row of the original design. */}
+      {Icon && (
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-[#a9793d]/25 bg-gradient-to-br from-[#f8f4ed] to-[#efe8dc] md:hidden">
+          <Icon size={22} strokeWidth={1.5} className="text-[#a9793d]" />
+        </div>
+      )}
+      <div className="mb-3 hidden items-center gap-3 pr-10 md:mb-4 md:flex">
         {Icon && (
           <Icon size={22} strokeWidth={1.5} className="text-[#a9793d]" />
         )}
@@ -2120,11 +2369,19 @@ function DashboardCard({
           {label}
         </p>
       </div>
-      <h3 className={`${serif.className} text-4xl font-medium text-stone-900`}>
+      {/* Label visible on mobile (the desktop one is hidden via .hidden above) */}
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#a9793d] md:hidden">
+        {label}
+      </p>
+      <h3
+        className={`${serif.className} text-2xl font-medium text-stone-900 md:text-4xl`}
+      >
         {title}
       </h3>
-      <p className="mt-4 flex-1 leading-relaxed text-stone-600">{text}</p>
-      <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-stone-400 transition group-hover:text-[#a9793d]">
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
+        {text}
+      </p>
+      <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.2em] text-stone-400 transition group-hover:text-[#a9793d] md:mt-6 md:text-xs">
         Open →
       </p>
       {/* gold underline draw — matches home CTAs */}

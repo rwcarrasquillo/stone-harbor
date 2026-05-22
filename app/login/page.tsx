@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { serif, sans } from "@/lib/fonts";
 import { Compass, Lock } from "@/app/components/icons";
+import { UserPlus, LogIn } from "lucide-react";
+import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
 
 // Brand system — matches home, dashboard, journal
 const GOLD = "#c4934e";
@@ -135,38 +137,55 @@ export default function LoginPage() {
       </svg>
 
       {/* TOP BAR */}
-      <header className="relative z-30 px-6 py-6 md:px-10">
+      <header className="relative z-30 px-4 py-3 md:px-10 md:py-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link
             href="/"
             className="group flex flex-col leading-none no-underline"
           >
-            <span className="text-base font-semibold uppercase tracking-[0.28em] text-[#c4934e] transition group-hover:text-white">
+            <span className="text-sm font-semibold uppercase tracking-[0.22em] text-[#c4934e] transition group-hover:text-white md:text-base md:tracking-[0.28em]">
               ← Stone Harbor
             </span>
-            <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]/70">
+            <span className="mt-1 hidden text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#c4934e]/70 md:block">
               Men&apos;s Mental Wellness
             </span>
           </Link>
           <Link
             href="/register"
-            className="group relative overflow-hidden rounded-none border border-[#c4934e] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[#c4934e] transition hover:bg-[#c4934e] hover:text-black"
+            aria-label="Create account"
+            className="group relative overflow-hidden rounded-none border border-[#c4934e] p-2 text-[#c4934e] transition hover:bg-[#c4934e] hover:text-black md:px-5 md:py-2.5"
           >
-            <span className="relative z-10">Create Account</span>
+            <UserPlus size={18} className="md:hidden" aria-hidden="true" />
+            <span className="relative z-10 hidden text-xs font-bold uppercase tracking-[0.22em] md:inline">
+              Create Account
+            </span>
           </Link>
         </div>
       </header>
 
       {/* MAIN */}
-      <section className="relative z-20 flex min-h-[calc(100vh-120px)] items-center justify-center px-6 py-8 md:px-10">
-        <div className="flex w-full max-w-[1320px] flex-col gap-8 md:flex-row md:items-stretch md:justify-center">
+      <section className="relative z-20 flex min-h-[calc(100vh-120px)] items-center justify-center px-4 py-4 md:px-10 md:py-8">
+        <div className="flex w-full max-w-[1320px] flex-col gap-5 md:flex-row md:items-stretch md:justify-center md:gap-8">
           {/* CREAM ASIDE — return language */}
           <motion.aside
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="relative flex w-full flex-col justify-center overflow-hidden rounded-none border border-stone-300 bg-[#f3efe7] px-10 py-16 text-stone-900 shadow-[0_35px_120px_rgba(0,0,0,0.32)] md:w-[46%] md:px-16 md:py-20"
+            className="relative flex w-full flex-col justify-center overflow-hidden rounded-none border border-stone-300 bg-[#f3efe7] px-6 py-8 text-stone-900 shadow-[0_35px_120px_rgba(0,0,0,0.32)] md:w-[46%] md:px-16 md:py-20"
           >
+            {/* Rotating nature backdrop — "returning to the harbor" imagery,
+                very low opacity so cream + serif text remain dominant. */}
+            <RotatingNatureBackdrop
+              images={[
+                "/nature/coastal-cliff-serene-sunset.jpg",
+                "/nature/ocean-cliff-foggy-day.jpg",
+                "/nature/misty-forest-sunrise-soft-light.jpg",
+              ]}
+              opacity={0.1}
+              rotationMs={15000}
+              imageFilter="sepia(0.2)"
+            />
+
             {/* paper grain inside the cream */}
             <svg
               className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04] mix-blend-multiply"
@@ -186,32 +205,32 @@ export default function LoginPage() {
             <div className="relative">
               <div className="flex items-center gap-2">
                 <Compass size={14} className="text-[#a9793d]" />
-                <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[#a9793d] md:text-xs">
                   Return
                 </p>
               </div>
               <h1
-                className={`${serif.className} mt-6 text-6xl font-semibold leading-[0.95] md:text-7xl lg:text-8xl`}
+                className={`${serif.className} mt-3 text-3xl font-semibold leading-[1] md:mt-6 md:text-7xl md:leading-[0.95] lg:text-8xl`}
               >
                 The harbor
                 <br />
                 remembers you.
               </h1>
-              <p className="mt-10 max-w-md text-lg leading-relaxed text-stone-600">
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-stone-600 md:mt-10 md:text-lg">
                 Whatever happened since you were last here — you&apos;re welcome
                 to return. No catching up required.
               </p>
               <p
-                className={`${serif.className} mt-8 text-2xl italic leading-snug text-[#a9793d]`}
+                className={`${serif.className} mt-4 text-lg italic leading-snug text-[#a9793d] md:mt-8 md:text-2xl`}
               >
                 Your work is waiting.
               </p>
 
-              <div className="mt-12 h-px w-16 bg-[#a9793d]" />
+              <div className="mt-6 h-px w-16 bg-[#a9793d] md:mt-12" />
 
-              <div className="mt-8 flex items-start gap-2">
+              <div className="mt-4 flex items-start gap-2 md:mt-8">
                 <Lock size={14} className="mt-0.5 shrink-0 text-stone-500" />
-                <p className="text-xs leading-relaxed text-stone-500">
+                <p className="text-[11px] leading-relaxed text-stone-500 md:text-xs">
                   Your reflections are encrypted. Yours alone. Never sold. Never
                   shared.
                 </p>
@@ -224,7 +243,7 @@ export default function LoginPage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="relative w-full overflow-hidden rounded-none border border-[#c4934e]/60 bg-black/35 px-8 py-14 shadow-[0_35px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl md:w-[52%] md:px-14"
+            className="relative w-full overflow-hidden rounded-none border border-[#c4934e]/60 bg-black/35 px-6 py-8 shadow-[0_35px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl md:w-[52%] md:px-14 md:py-14"
           >
             {/* subtle warm wash inside the glass */}
             <div
@@ -236,22 +255,22 @@ export default function LoginPage() {
             />
 
             <div className="relative z-10 mx-auto max-w-[600px]">
-              <div className="mb-10 flex items-baseline justify-between">
+              <div className="mb-6 flex items-baseline justify-between md:mb-10">
                 <h2
-                  className={`${serif.className} text-5xl font-medium text-white`}
+                  className={`${serif.className} text-3xl font-medium text-white md:text-5xl`}
                 >
                   Login.
                 </h2>
                 <Link
                   href="/register"
-                  className="group relative text-xs font-bold uppercase tracking-[0.22em] text-white/90 transition hover:text-[#c4934e]"
+                  className="group relative text-[11px] font-bold uppercase tracking-[0.22em] text-white/90 transition hover:text-[#c4934e] md:text-xs"
                 >
                   <span className="relative z-10">Register</span>
                   <span className="absolute bottom-[-4px] left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
                 </Link>
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-6">
+              <form onSubmit={handleLogin} className="space-y-4 md:space-y-6">
                 <Field
                   label="Email"
                   type="email"
@@ -270,7 +289,7 @@ export default function LoginPage() {
                 <div className="flex justify-end pt-1">
                   <Link
                     href="/forgot-password"
-                    className="text-xs font-bold uppercase tracking-[0.22em] text-[#c4934e] transition hover:text-white"
+                    className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#c4934e] transition hover:text-white md:text-xs"
                   >
                     Forgot Password?
                   </Link>
@@ -279,9 +298,9 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group relative mt-8 flex w-full items-center justify-center gap-3 overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-8 py-5 text-sm font-bold uppercase tracking-[0.25em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition duration-300 hover:bg-[#8d6432] disabled:opacity-60"
+                  className="group relative mt-5 flex w-full items-center justify-center gap-3 overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-6 py-4 text-xs font-bold uppercase tracking-[0.22em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_10px_35px_rgba(0,0,0,0.4)] transition duration-300 hover:bg-[#8d6432] disabled:opacity-60 md:mt-8 md:px-8 md:py-5 md:text-sm md:tracking-[0.25em]"
                 >
-                  {loading && (
+                  {loading ? (
                     <motion.span
                       animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
                       transition={{
@@ -291,6 +310,8 @@ export default function LoginPage() {
                       }}
                       className="h-2 w-2 rounded-full bg-white"
                     />
+                  ) : (
+                    <LogIn size={16} aria-hidden="true" />
                   )}
                   <span className="relative z-10">
                     {loading ? "Signing In…" : "Sign In"}
@@ -299,7 +320,7 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <p className="mx-auto mt-10 max-w-lg text-center text-sm leading-relaxed text-white/80">
+              <p className="mx-auto mt-6 max-w-lg text-center text-xs leading-relaxed text-white/80 md:mt-10 md:text-sm">
                 New to Stone Harbor?{" "}
                 <Link
                   href="/register"
@@ -327,17 +348,17 @@ export default function LoginPage() {
       </section>
 
       {/* FOOTER — 988 crisis line, especially important on auth pages */}
-      <footer className="relative z-10 mt-8 border-t border-white/10 bg-black/40 px-6 py-8 backdrop-blur md:px-10">
-        <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-3 md:items-center">
+      <footer className="relative z-10 mt-4 border-t border-white/10 bg-black/40 px-4 py-5 backdrop-blur md:mt-8 md:px-10 md:py-8">
+        <div className="mx-auto grid max-w-7xl gap-3 md:grid-cols-3 md:items-center md:gap-4">
           <p
-            className={`${serif.className} text-base italic text-white/70 md:text-left`}
+            className={`${serif.className} text-sm italic text-white/70 md:text-base md:text-left`}
           >
             The harbor is patient.
           </p>
-          <p className="text-center text-[10px] font-bold uppercase tracking-[0.28em] text-white/50">
+          <p className="text-center text-[9px] font-bold uppercase tracking-[0.28em] text-white/50 md:text-[10px]">
             Stone Harbor · Men&apos;s Mental Wellness
           </p>
-          <p className="text-right text-sm leading-relaxed text-white/80">
+          <p className="text-left text-xs leading-relaxed text-white/80 md:text-right md:text-sm">
             <span className="block text-[10px] font-bold uppercase tracking-[0.3em] text-white/50">
               If You Are In Crisis
             </span>
