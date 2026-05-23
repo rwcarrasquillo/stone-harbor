@@ -585,11 +585,18 @@ export default function WelcomePage() {
    * up. By the time the section is in the DOM we've already lost
    * the scroll moment.
    *
-   * This effect waits for loading to be false (so the section is
-   * rendered), then if the URL hash matches a known target,
-   * imperatively scrolls to that element. The smooth behavior is
-   * intentional — a sudden jump from the top of the page to a
-   * mid-page section would feel jarring in the harbor's tone.
+   * Strategy:
+   *   When loading flips to false, retry the scroll attempt up to
+   *   five times at 80ms intervals. Each attempt looks up the
+   *   element fresh; the first time the element exists, we scroll
+   *   and stop. This handles the case where the gated section is
+   *   rendered slightly later than `loading` flipping (e.g.,
+   *   userCreatedAt loads, isFeatureUnlocked starts returning true,
+   *   React commits the section in the next paint).
+   *
+   *   Smooth scrolling is intentional — a sudden jump from the top
+   *   of the page to a mid-page section would feel jarring in the
+   *   harbor's tone.
    */
   useEffect(() => {
     if (loading) return;
@@ -598,15 +605,28 @@ export default function WelcomePage() {
     if (!hash) return;
     const targetId = hash.replace(/^#/, "");
     if (!targetId) return;
-    // Defer a frame so React has finished committing the loaded
-    // form (including the gated Lineage section) to the DOM.
-    const raf = requestAnimationFrame(() => {
+
+    let attempts = 0;
+    const maxAttempts = 8;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const tryScroll = () => {
       const el = document.getElementById(targetId);
       if (el) {
         el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
       }
-    });
-    return () => cancelAnimationFrame(raf);
+      attempts += 1;
+      if (attempts < maxAttempts) {
+        timer = setTimeout(tryScroll, 80);
+      }
+    };
+
+    // Defer the first attempt one frame so React has committed the
+    // form to the DOM. Subsequent retries cover the case where the
+    // section appears slightly later as nested state settles.
+    timer = setTimeout(tryScroll, 50);
+    return () => clearTimeout(timer);
   }, [loading]);
 
   if (loading) {

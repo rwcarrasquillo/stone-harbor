@@ -49,13 +49,24 @@ export function LineageDoorCard({ userId, lineageDoorSeenAt }: Props) {
   const alreadySeen = lineageDoorSeenAt !== null && !previewActive;
   if (alreadySeen || dismissed) return null;
 
-  // Record that the announcement was rendered. In real use, this is
-  // a one-time write. In preview, we skip the write so re-running
-  // the preview still shows the card.
+  // Record that the announcement was rendered. Writes regardless of
+  // preview mode so testing the persistence path works end-to-end.
+  // To re-test the card after dismissal, manually reset the column:
+  //
+  //   update profiles set lineage_door_seen_at = null
+  //   where id = '<your-user-id>';
+  //
+  // Or stay in preview mode — the card always shows when previewing
+  // because the visibility check at the top of this component
+  // bypasses lineage_door_seen_at when a preview override is active.
   async function markSeen() {
     setDismissed(true);
-    if (previewActive) return;
-    await supabase
+    // Fire-and-forget. The Link's navigation will tear down this
+    // component while the request is in flight; that's fine — supabase
+    // queues the write before navigation begins. We deliberately do
+    // NOT await: blocking on the update would delay the page
+    // transition by ~150ms with no UX benefit.
+    void supabase
       .from("profiles")
       .update({ lineage_door_seen_at: new Date().toISOString() })
       .eq("id", userId);
