@@ -126,6 +126,11 @@ export default function WelcomePage() {
   // Account age for progressive disclosure (the Lineage section is
   // hidden until day 90+).
   const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
+  // Whether the Lineage section should default-collapse on render.
+  // Set true when profile has visit_count >= 3 AND all three lineage
+  // fields are still empty. Resolved during profile load; the
+  // LineageSection still owns its expand/collapse interaction.
+  const [lineageDefaultCollapsed, setLineageDefaultCollapsed] = useState(false);
 
   const [formData, setFormData] = useState<ProfileForm>({
     email: "",
@@ -236,7 +241,7 @@ export default function WelcomePage() {
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave, lineage_section_visit_count",
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -277,6 +282,44 @@ export default function WelcomePage() {
       lineage_father_anger: data?.lineage_father_anger ?? "",
       lineage_pattern_to_leave: data?.lineage_pattern_to_leave ?? "",
     });
+
+    // Lineage auto-collapse bookkeeping.
+    //
+    // Increment lineage_section_visit_count if all three fields are
+    // empty AND the count hasn't yet hit the threshold. After the
+    // threshold (3 blank visits) the section default-collapses; the
+    // man can still expand it via the threshold affordance.
+    //
+    // We use the AFTER-increment count to decide whether to collapse
+    // this very render, so the third blank visit lands as the first
+    // collapsed view rather than waiting for a fourth visit.
+    const COLLAPSE_AFTER_VISITS = 3;
+    const lineageEmpty =
+      !(data?.lineage_father_grief ?? "").trim() &&
+      !(data?.lineage_father_anger ?? "").trim() &&
+      !(data?.lineage_pattern_to_leave ?? "").trim();
+    const currentVisitCount =
+      (data as { lineage_section_visit_count?: number } | null)
+        ?.lineage_section_visit_count ?? 0;
+    let effectiveVisitCount = currentVisitCount;
+    if (lineageEmpty && currentVisitCount < COLLAPSE_AFTER_VISITS) {
+      effectiveVisitCount = currentVisitCount + 1;
+      // Fire-and-forget; an error here shouldn't block profile load.
+      void supabase
+        .from("profiles")
+        .update({ lineage_section_visit_count: effectiveVisitCount })
+        .eq("id", user.id);
+    }
+    // If the man deep-linked here via /welcome#lineage (e.g., from the
+    // dashboard's "Visit the room" announcement), open the section
+    // regardless of visit count — he asked for it explicitly.
+    const deepLinkedToLineage =
+      typeof window !== "undefined" && window.location.hash === "#lineage";
+    setLineageDefaultCollapsed(
+      !deepLinkedToLineage &&
+        lineageEmpty &&
+        effectiveVisitCount >= COLLAPSE_AFTER_VISITS,
+    );
 
     setLoading(false);
   }
@@ -969,6 +1012,7 @@ export default function WelcomePage() {
                         lineage_pattern_to_leave: value,
                       })
                     }
+                    defaultCollapsed={lineageDefaultCollapsed}
                   />
                 </div>
               )}
