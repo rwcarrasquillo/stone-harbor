@@ -576,6 +576,39 @@ export default function WelcomePage() {
     checkUser();
   }, []);
 
+  /**
+   * Hash-aware scroll. Browsers natively scroll to a URL fragment
+   * on navigation, but when the target element is rendered behind
+   * a loading guard (as the Lineage section is — it only mounts
+   * after profile data has loaded AND the day-90 gate is passed),
+   * the browser's first scroll attempt finds no element and gives
+   * up. By the time the section is in the DOM we've already lost
+   * the scroll moment.
+   *
+   * This effect waits for loading to be false (so the section is
+   * rendered), then if the URL hash matches a known target,
+   * imperatively scrolls to that element. The smooth behavior is
+   * intentional — a sudden jump from the top of the page to a
+   * mid-page section would feel jarring in the harbor's tone.
+   */
+  useEffect(() => {
+    if (loading) return;
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (!hash) return;
+    const targetId = hash.replace(/^#/, "");
+    if (!targetId) return;
+    // Defer a frame so React has finished committing the loaded
+    // form (including the gated Lineage section) to the DOM.
+    const raf = requestAnimationFrame(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [loading]);
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]">
