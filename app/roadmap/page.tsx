@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
 import {
   Eye,
@@ -75,6 +76,9 @@ function formatDate(value: string) {
 }
 
 export default function RoadmapPage() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [userId, setUserId] = useState<string | null>(null);
   const [userStage, setUserStage] = useState<Stage>("clarity");
   const [activeStage, setActiveStage] = useState<Stage>("clarity");
@@ -239,7 +243,7 @@ export default function RoadmapPage() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Opening your roadmap…
           </p>
@@ -272,7 +276,7 @@ export default function RoadmapPage() {
           </Link>
           <Link
             href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
+            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
           >
             Stone Harbor
           </Link>
@@ -292,11 +296,11 @@ export default function RoadmapPage() {
             </p>
           </div>
           <h1
-            className={`${serif.className} mt-4 text-5xl font-medium leading-tight text-stone-900 md:text-7xl`}
+            className={`${serif.className} mt-4 text-5xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-7xl`}
           >
             Your path.
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-relaxed text-stone-600">
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--sh-text-secondary)]">
             Three stages. Five steps each. Move at your pace. Mark what
             you&apos;ve done.
           </p>
@@ -354,7 +358,7 @@ export default function RoadmapPage() {
                   >
                     {stats.percent}%
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                     {stats.completed} of {stats.total}
                   </span>
                 </div>
@@ -379,7 +383,7 @@ export default function RoadmapPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4 }}
-            className={`${serif.className} mb-8 text-xl italic text-stone-700 md:text-2xl`}
+            className={`${serif.className} mb-8 text-xl italic text-[var(--sh-text-secondary)] md:text-2xl`}
           >
             {activeMeta.blurb}
           </motion.p>
@@ -387,7 +391,13 @@ export default function RoadmapPage() {
 
         {/* STEP LIST */}
         {activeStageSteps.length === 0 ? (
-          <div className="border border-stone-200 bg-white p-8 text-stone-600">
+          <div
+            className={`border p-8 text-[var(--sh-text-secondary)] ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-sm"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
+          >
             No steps in this stage yet.
           </div>
         ) : (
@@ -404,9 +414,11 @@ export default function RoadmapPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
                   transition={{ duration: 0.4, delay: idx * 0.05 }}
-                  className="bg-white p-6 transition"
+                  className={`p-6 transition ${
+                    isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+                  }`}
                   style={{
-                    border: `1px solid ${isNext ? activeAccent : "#e7e5e4"}`,
+                    border: `1px solid ${isNext ? activeAccent : isDusk ? "rgba(255,255,255,0.1)" : "#e7e5e4"}`,
                     borderLeftWidth: isCompleted || isNext ? "3px" : "1px",
                     borderLeftColor:
                       isCompleted || isNext ? activeAccent : undefined,
@@ -416,7 +428,7 @@ export default function RoadmapPage() {
                   <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between md:gap-8">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-bold text-stone-400">
+                        <span className="text-xs font-bold text-[var(--sh-text-muted)]">
                           {String(step.position).padStart(2, "0")}
                         </span>
                         {isCompleted ? (
@@ -436,17 +448,17 @@ export default function RoadmapPage() {
                         ) : null}
                       </div>
                       <h3
-                        className={`${serif.className} mt-2 text-2xl font-medium text-stone-900 md:text-3xl`}
+                        className={`${serif.className} mt-2 text-2xl font-medium text-[var(--sh-text-primary)] md:text-3xl`}
                       >
                         {step.title}
                       </h3>
                       {step.description && (
-                        <p className="mt-2 max-w-2xl leading-relaxed text-stone-600">
+                        <p className="mt-2 max-w-2xl leading-relaxed text-[var(--sh-text-secondary)]">
                           {step.description}
                         </p>
                       )}
                       {completedAt && (
-                        <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                        <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                           Completed {formatDate(completedAt)}
                         </p>
                       )}
@@ -457,7 +469,7 @@ export default function RoadmapPage() {
                           type="button"
                           onClick={() => unmarkComplete(step.id)}
                           disabled={isBusy}
-                          className="rounded-none border border-stone-300 px-5 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
+                          className="rounded-none border border-[var(--sh-border-medium)] px-5 py-3 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
                         >
                           {isBusy ? "Undoing…" : "Undo"}
                         </button>
@@ -494,7 +506,11 @@ export default function RoadmapPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="mt-8 border-y border-stone-200 bg-white/60 px-6 py-10 text-center backdrop-blur-sm"
+              className={`mt-8 border-y px-6 py-10 text-center backdrop-blur-sm ${
+                isDusk
+                  ? "border-white/10 bg-black/30"
+                  : "border-[var(--sh-border-subtle)] bg-white/60"
+              }`}
             >
               <p
                 className={`${serif.className} text-3xl italic md:text-4xl`}
@@ -502,7 +518,7 @@ export default function RoadmapPage() {
               >
                 The {activeStage} path is complete.
               </p>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-stone-600">
+              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--sh-text-secondary)]">
                 Sit with that for a moment. The work was yours.
               </p>
             </motion.div>
@@ -512,7 +528,7 @@ export default function RoadmapPage() {
       <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* FOOTER */}
-      <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
+      <footer className="relative z-10 mt-12 border-t border-[var(--sh-border-subtle)] bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
@@ -523,15 +539,15 @@ export default function RoadmapPage() {
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               If You Are In Crisis
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               Call or text <span className="font-bold text-[#a9793d]">988</span>{" "}
               — 24/7. Free. Confidential.
             </p>

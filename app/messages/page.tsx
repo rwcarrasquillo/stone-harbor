@@ -7,6 +7,11 @@ import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
 import { useTheme } from "@/app/components/themeProvider";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
+import { BrotherhoodPairing } from "@/app/components/brotherhoodPairing";
+import {
+  FEATURE_THRESHOLDS,
+  isFeatureUnlocked,
+} from "@/lib/userProgress";
 import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
@@ -74,6 +79,8 @@ export default function MessagesPage() {
   const isDusk = theme === "dusk";
 
   const [userId, setUserId] = useState<string | null>(null);
+  // Account age for gating the Brotherhood pairing tile to day 120+.
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationListItem[]>(
     [],
   );
@@ -119,9 +126,11 @@ export default function MessagesPage() {
       return;
     }
     // Suspension gate — block messaging when suspended.
+    // Also fetch created_at so we can gate the Brotherhood pairing
+    // tile (day 120 unlock).
     const { data: gateRow } = await supabase
       .from("profiles")
-      .select("suspended_at")
+      .select("suspended_at, created_at")
       .eq("id", user.id)
       .single();
     if (gateRow?.suspended_at) {
@@ -129,6 +138,7 @@ export default function MessagesPage() {
       return;
     }
     setUserId(user.id);
+    setUserCreatedAt(gateRow?.created_at ?? null);
     await loadConversations(user.id);
     setLoading(false);
   }
@@ -483,6 +493,21 @@ export default function MessagesPage() {
             </p>
           </div>
         </motion.div>
+
+        {/* BROTHERHOOD PAIRING TILE — day 120 unlock.
+            Sits above the inbox grid so the opt-in flow is the first
+            thing the man sees when he comes to /messages. After he
+            opts in, the same tile transforms into a waiting panel,
+            and then into the active pairing once a match is made. */}
+        {userId &&
+          isFeatureUnlocked(
+            userCreatedAt,
+            FEATURE_THRESHOLDS.brotherhoodPairing,
+          ) && (
+            <div className="mb-8">
+              <BrotherhoodPairing userId={userId} />
+            </div>
+          )}
 
         <div className="grid min-h-[760px] gap-8 lg:grid-cols-[0.42fr_0.58fr]">
           {/* LEFT — INBOX + SEARCH */}

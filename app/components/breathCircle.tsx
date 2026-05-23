@@ -57,6 +57,13 @@ type Props = {
    * different accent — e.g., moss for a calm card.
    */
   accent?: string;
+  /**
+   * Override the duration of the current phase animation (in seconds).
+   * Defaults to DURATION.breath (4s) for the box cycle. The Long Exhale
+   * mode passes the active phase's duration so the circle's swell and
+   * shrink match the actual breath cadence the member is following.
+   */
+  phaseDuration?: number;
   className?: string;
 };
 
@@ -78,6 +85,7 @@ export function BreathCircle({
   progressFraction,
   label,
   accent = "#c4934e",
+  phaseDuration,
   className = "",
 }: Props) {
   // We tween the inner circle from 1x → ~1.4x on inhale, back on
@@ -106,7 +114,10 @@ export function BreathCircle({
           scale: phase === "inhale" ? 1.4 : 1,
           opacity: phase === "inhale" ? 0.95 : 0.6,
         }}
-        transition={{ duration: DURATION.breath, ease: EASE.patient }}
+        transition={{
+          duration: phaseDuration ?? DURATION.breath,
+          ease: EASE.patient,
+        }}
         className="flex items-center justify-center rounded-full border"
         style={{
           width: px,
@@ -129,22 +140,81 @@ export function BreathCircle({
 }
 
 /**
- * Hook that runs the 4s/4s box-breath cycle and returns the
- * current phase. Use this when you want a BreathCircle and don't
- * want to wire the interval yourself.
+ * A named breath pattern. The library lives here so any future
+ * additions (e.g., resonant 5.5/5.5 coherence breathing) plug in
+ * without touching the rendering code.
  *
- *   const phase = useBreathCycle();
- *   <BreathCircle phase={phase} />
+ *   box       — 4s in / 4s out. Symmetrical, calming, the default.
+ *   longExhale — 4s in / 7s out. Vagally activating; useful when
+ *                something is sitting heavy and the nervous system
+ *                is in sympathetic activation. Named for what it
+ *                does for the man, not for the science behind it.
  */
-export function useBreathCycle() {
+export type BreathPattern = {
+  inhale: number; // seconds
+  exhale: number; // seconds
+};
+
+export const BREATH_PATTERNS = {
+  box: { inhale: 4, exhale: 4 } as BreathPattern,
+  longExhale: { inhale: 4, exhale: 7 } as BreathPattern,
+} as const;
+
+/**
+ * Hook that drives a breath cycle and returns the current phase plus
+ * the duration of that phase (so the BreathCircle's swell animation
+ * can match the actual time being breathed).
+ *
+ * Call with no argument for the original 4s/4s box cycle:
+ *   const { phase, phaseDuration } = useBreathCycle();
+ *
+ * Call with a pattern for variable cadence:
+ *   const { phase, phaseDuration } = useBreathCycle(BREATH_PATTERNS.longExhale);
+ *
+ * Implementation note:
+ *   We use setTimeout chained rather than setInterval so the inhale
+ *   and exhale phases can have different durations. Each phase
+ *   schedules the next one based on the upcoming phase's duration.
+ *
+ * The legacy callsite signature (no args, returns just phase) is
+ * preserved below as `useBoxBreath` for components that already use
+ * it and don't need duration info.
+ */
+export function useBreathCycle(
+  pattern: BreathPattern = BREATH_PATTERNS.box,
+): { phase: "inhale" | "exhale"; phaseDuration: number } {
   const [phase, setPhase] = useState<"inhale" | "exhale">("inhale");
+
   useEffect(() => {
-    const id = setInterval(() => {
-      setPhase((p) => (p === "inhale" ? "exhale" : "inhale"));
-    }, DURATION.breath * 1000);
-    return () => clearInterval(id);
-  }, []);
-  return phase;
+    // Each tick advances to the next phase. The timer for the NEXT
+    // tick is set based on the duration of the phase we're entering.
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = (current: "inhale" | "exhale") => {
+      const next = current === "inhale" ? "exhale" : "inhale";
+      setPhase(next);
+      timer = setTimeout(
+        () => tick(next),
+        pattern[next] * 1000,
+      );
+    };
+    // Reset to inhale on pattern change so the cycle starts fresh.
+    setPhase("inhale");
+    timer = setTimeout(() => tick("inhale"), pattern.inhale * 1000);
+    return () => clearTimeout(timer);
+  }, [pattern.inhale, pattern.exhale]);
+
+  return { phase, phaseDuration: pattern[phase] };
+}
+
+/**
+ * Legacy convenience hook for callsites that just want the phase
+ * and don't care about the duration. Equivalent to the original
+ * useBreathCycle() signature. Preserved so the home page, dashboard
+ * meditation entry, and any other existing consumers keep working
+ * without modification.
+ */
+export function useBoxBreath(): "inhale" | "exhale" {
+  return useBreathCycle(BREATH_PATTERNS.box).phase;
 }
 
 /**

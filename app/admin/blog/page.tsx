@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { useTheme } from "@/app/components/themeProvider";
+import { VentInput, VentTextarea } from "@/app/components/ventField";
 import { serif, sans } from "@/lib/fonts";
 import {
   Book,
@@ -55,6 +57,9 @@ function formatDateTime(value: string) {
 }
 
 export default function AdminBlogReview() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -229,7 +234,7 @@ export default function AdminBlogReview() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Loading drafts…
           </p>
@@ -248,7 +253,7 @@ export default function AdminBlogReview() {
             Restricted
           </p>
           <h1
-            className={`${serif.className} mt-4 text-4xl font-medium text-stone-900`}
+            className={`${serif.className} mt-4 text-4xl font-medium text-[var(--sh-text-primary)]`}
           >
             {authzError}
           </h1>
@@ -288,13 +293,17 @@ export default function AdminBlogReview() {
           <div className="flex items-center gap-3">
             <Link
               href="/admin/external"
-              className="border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white"
+              className={`border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] ${
+                isDusk
+                  ? "border-white/15 bg-black/40 hover:bg-white/[0.06]"
+                  : "border-[var(--sh-border-medium)] bg-white/70 hover:bg-white"
+              }`}
             >
               External Content →
             </Link>
             <Link
               href="/"
-              className="text-xs font-bold uppercase tracking-[0.28em] text-stone-500 transition hover:text-[#a9793d]"
+              className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
             >
               Stone Harbor
             </Link>
@@ -316,11 +325,11 @@ export default function AdminBlogReview() {
               </p>
             </div>
             <h1
-              className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-stone-900 md:text-6xl`}
+              className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-6xl`}
             >
               Posts.
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               Drafts come in from the daily generation run. Read each one,
               edit if it needs help, then publish.
             </p>
@@ -351,11 +360,21 @@ export default function AdminBlogReview() {
               </span>
             </button>
             {generateMenuOpen && !generating && (
-              <div className="absolute right-0 top-full z-30 mt-2 w-56 border border-stone-300 bg-white shadow-lg">
+              <div
+                className={`absolute right-0 top-full z-30 mt-2 w-56 border shadow-lg ${
+                  isDusk
+                    ? "border-white/10 bg-[#1a1614] backdrop-blur-md"
+                    : "border-[var(--sh-border-medium)] bg-white"
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => generateDrafts()}
-                  className="block w-full border-b border-stone-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:bg-[#f8f4ed]"
+                  className={`block w-full border-b px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition ${
+                    isDusk
+                      ? "border-white/5 hover:bg-white/[0.05]"
+                      : "border-[var(--sh-border-subtle)] hover:bg-[#f8f4ed]"
+                  }`}
                 >
                   All three pillars
                 </button>
@@ -364,7 +383,11 @@ export default function AdminBlogReview() {
                     key={p.value}
                     type="button"
                     onClick={() => generateDrafts(p.value)}
-                    className="block w-full border-b border-stone-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] transition hover:bg-[#f8f4ed] last:border-b-0"
+                    className={`block w-full border-b px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] transition last:border-b-0 ${
+                      isDusk
+                        ? "border-white/5 hover:bg-white/[0.05]"
+                        : "border-[var(--sh-border-subtle)] hover:bg-[#f8f4ed]"
+                    }`}
                     style={{ color: p.accent }}
                   >
                     {p.label} only
@@ -376,7 +399,13 @@ export default function AdminBlogReview() {
         </motion.div>
 
         {/* TABS + FILTER */}
-        <div className="mb-6 flex flex-col gap-4 border-y border-stone-200 bg-white/40 px-5 py-4 backdrop-blur-sm md:flex-row md:items-center md:justify-between">
+        <div
+          className={`mb-6 flex flex-col gap-4 border-y px-5 py-4 backdrop-blur-sm md:flex-row md:items-center md:justify-between ${
+            isDusk
+              ? "border-white/10 bg-black/25"
+              : "border-[var(--sh-border-subtle)] bg-white/40"
+          }`}
+        >
           <div className="flex gap-2">
             <button
               type="button"
@@ -443,15 +472,21 @@ export default function AdminBlogReview() {
 
         {/* LIST */}
         {visiblePosts.length === 0 ? (
-          <div className="border border-stone-200 bg-white p-8">
+          <div
+            className={`border p-8 ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-sm"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
+          >
             <p
-              className={`${serif.className} text-2xl italic text-stone-700`}
+              className={`${serif.className} text-2xl italic text-[var(--sh-text-secondary)]`}
             >
               {tab === "drafts"
                 ? "No drafts to review."
                 : "No published posts yet."}
             </p>
-            <p className="mt-2 text-sm text-stone-500">
+            <p className="mt-2 text-sm text-[var(--sh-text-tertiary)]">
               {tab === "drafts"
                 ? "Hit Generate Drafts above to pull fresh content."
                 : "Approve a draft to publish it."}
@@ -470,21 +505,31 @@ export default function AdminBlogReview() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
                   transition={{ duration: 0.4 }}
-                  className="bg-white p-6 transition"
+                  className={`p-6 transition ${
+                    isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+                  }`}
                   style={{
-                    border: "1px solid #e7e5e4",
+                    border: `1px solid ${isDusk ? "rgba(255,255,255,0.1)" : "#e7e5e4"}`,
                     borderLeft: `3px solid ${accent}`,
                   }}
                 >
                   <div className="mb-4 flex flex-wrap items-center gap-3">
                     <span
-                      className="border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em]"
+                      className={`border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] ${
+                        isDusk ? "bg-white/[0.05]" : "bg-white"
+                      }`}
                       style={{ borderColor: accent, color: accent }}
                     >
                       {post.pillar}
                     </span>
                     {post.is_ai_generated && (
-                      <span className="border border-stone-300 bg-[#f8f4ed] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                      <span
+                        className={`border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] ${
+                          isDusk
+                            ? "border-white/15 bg-white/[0.05]"
+                            : "border-[var(--sh-border-medium)] bg-[#f8f4ed]"
+                        }`}
+                      >
                         AI · {post.model}
                       </span>
                     )}
@@ -496,7 +541,7 @@ export default function AdminBlogReview() {
                         ✓ Published {post.published_at && formatDateTime(post.published_at)}
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                         Draft · created {formatDateTime(post.created_at)}
                       </span>
                     )}
@@ -504,15 +549,15 @@ export default function AdminBlogReview() {
 
                   {isEditing && draftFields ? (
                     <div className="space-y-4">
-                      <input
+                      <VentInput
                         value={draftFields.title}
                         onChange={(e) =>
                           setDraftFields({ ...draftFields, title: e.target.value })
                         }
-                        className="w-full border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-xl outline-none focus:border-[#a9793d]"
                         placeholder="Title"
+                        className="text-xl"
                       />
-                      <input
+                      <VentInput
                         value={draftFields.summary}
                         onChange={(e) =>
                           setDraftFields({
@@ -520,8 +565,8 @@ export default function AdminBlogReview() {
                             summary: e.target.value,
                           })
                         }
-                        className="w-full border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-sm outline-none focus:border-[#a9793d]"
                         placeholder="One-line summary"
+                        compact
                       />
                       <select
                         value={draftFields.pillar}
@@ -531,7 +576,11 @@ export default function AdminBlogReview() {
                             pillar: e.target.value as Pillar,
                           })
                         }
-                        className="w-full border border-stone-300 bg-[#f8f4ed] px-4 py-3 text-sm outline-none focus:border-[#a9793d]"
+                        className={`w-full border px-4 py-3 text-sm outline-none focus:border-[var(--sh-accent-gold)] ${
+                          isDusk
+                            ? "border-white/15 bg-black/40 text-stone-100"
+                            : "border-[var(--sh-border-medium)] bg-[#f8f4ed] text-[var(--sh-text-primary)]"
+                        }`}
                       >
                         {PILLARS.map((p) => (
                           <option key={p.value} value={p.value}>
@@ -539,7 +588,7 @@ export default function AdminBlogReview() {
                           </option>
                         ))}
                       </select>
-                      <textarea
+                      <VentTextarea
                         value={draftFields.content}
                         onChange={(e) =>
                           setDraftFields({
@@ -548,7 +597,7 @@ export default function AdminBlogReview() {
                           })
                         }
                         rows={18}
-                        className="w-full resize-y border border-stone-300 bg-[#f8f4ed] px-4 py-3 font-mono text-sm outline-none focus:border-[#a9793d]"
+                        className="resize-y font-mono"
                       />
                       <div className="flex gap-3">
                         <button
@@ -562,7 +611,7 @@ export default function AdminBlogReview() {
                         <button
                           type="button"
                           onClick={cancelEdit}
-                          className="border border-stone-300 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-stone-400"
+                          className="border border-[var(--sh-border-medium)] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-stone-400"
                         >
                           Cancel
                         </button>
@@ -571,20 +620,20 @@ export default function AdminBlogReview() {
                   ) : (
                     <>
                       <h2
-                        className={`${serif.className} text-3xl font-medium leading-tight text-stone-900 md:text-4xl`}
+                        className={`${serif.className} text-3xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-4xl`}
                       >
                         {post.title}
                       </h2>
                       {(post.summary || post.excerpt) && (
-                        <p className="mt-2 text-sm italic leading-relaxed text-stone-600">
+                        <p className="mt-2 text-sm italic leading-relaxed text-[var(--sh-text-secondary)]">
                           {post.summary || post.excerpt}
                         </p>
                       )}
-                      <details className="mt-4 border-t border-stone-200 pt-3">
-                        <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.22em] text-stone-500 hover:text-[#a9793d]">
+                      <details className="mt-4 border-t border-[var(--sh-border-subtle)] pt-3">
+                        <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] hover:text-[#a9793d]">
                           Read full body
                         </summary>
-                        <p className="mt-4 whitespace-pre-wrap leading-relaxed text-stone-700">
+                        <p className="mt-4 whitespace-pre-wrap leading-relaxed text-[var(--sh-text-secondary)]">
                           {post.content}
                         </p>
                       </details>
@@ -608,7 +657,7 @@ export default function AdminBlogReview() {
                             type="button"
                             onClick={() => unpublishPost(post.id)}
                             disabled={isBusy}
-                            className="border border-stone-300 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-stone-400 disabled:opacity-60"
+                            className="border border-[var(--sh-border-medium)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-stone-400 disabled:opacity-60"
                           >
                             Unpublish
                           </button>
@@ -616,7 +665,7 @@ export default function AdminBlogReview() {
                         <button
                           type="button"
                           onClick={() => beginEdit(post)}
-                          className="inline-flex items-center gap-2 border border-stone-300 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-[#a9793d] hover:text-[#a9793d]"
+                          className="inline-flex items-center gap-2 border border-[var(--sh-border-medium)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[#a9793d] hover:text-[#a9793d]"
                         >
                           <EditIcon size={12} /> Edit
                         </button>
@@ -624,7 +673,7 @@ export default function AdminBlogReview() {
                           type="button"
                           onClick={() => deletePost(post.id)}
                           disabled={isBusy}
-                          className="inline-flex items-center gap-2 border border-stone-300 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
+                          className="inline-flex items-center gap-2 border border-[var(--sh-border-medium)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
                         >
                           <Trash size={12} /> Delete
                         </button>
@@ -639,7 +688,7 @@ export default function AdminBlogReview() {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
+      <footer className="relative z-10 mt-12 border-t border-[var(--sh-border-subtle)] bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
@@ -650,15 +699,15 @@ export default function AdminBlogReview() {
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               If Anyone Is In Crisis
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               <span className="font-bold text-[#a9793d]">988</span> — 24/7. Free.
               Confidential.
             </p>

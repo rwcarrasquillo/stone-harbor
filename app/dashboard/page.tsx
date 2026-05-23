@@ -31,6 +31,15 @@ import { Toast, type ToastState } from "@/app/components/toast";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
 import { AmnioticBackdrop } from "@/app/components/amnioticBackdrop";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import {
+  SmallThing,
+  shouldShowSmallThingToday,
+} from "@/app/components/smallThing";
+import { LineageDoorCard } from "@/app/components/lineageDoorCard";
+import {
+  FEATURE_THRESHOLDS,
+  isFeatureUnlocked,
+} from "@/lib/userProgress";
 import { useTheme } from "@/app/components/themeProvider";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
@@ -162,6 +171,16 @@ export default function DashboardPage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  // Account age for progressive disclosure (the small-thing tile is
+  // gated to day 75 to land a couple weeks after the sub-mood unlock).
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
+  // Whether the once-shown Lineage door announcement has already
+  // appeared for this member. Null until profile loads; null also
+  // means "never shown" once loaded, in which case the announcement
+  // renders at day 90+.
+  const [lineageDoorSeenAt, setLineageDoorSeenAt] = useState<string | null>(
+    null,
+  );
   const [acknowledgment, setAcknowledgment] = useState<Acknowledgment | null>(
     null,
   );
@@ -547,10 +566,17 @@ export default function DashboardPage() {
     const { data } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, onboarding_completed_at, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, suspended_at",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, onboarding_completed_at, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, acknowledgments_dismissed, suspended_at, created_at, lineage_door_seen_at",
       )
       .eq("id", user.id)
       .single();
+    // created_at drives progressive disclosure of the small-thing tile.
+    setUserCreatedAt((data as { created_at?: string } | null)?.created_at ?? null);
+    // The "Lineage" door appears once at day 90+ and is then marked seen.
+    setLineageDoorSeenAt(
+      (data as { lineage_door_seen_at?: string | null } | null)
+        ?.lineage_door_seen_at ?? null,
+    );
 
     // Suspension gate: if the account is suspended, route to the suspension
     // screen where they can see warnings and submit an appeal. This must
@@ -1141,6 +1167,56 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.section>
+
+        {/* A SMALL THING — behavioral activation channel.
+            Gated by FEATURE_THRESHOLDS.smallThings (day 75) so the
+            harbor has been quiet for a couple months before any
+            "consider doing X" tile surfaces. Within that gate, the
+            cadence helper limits display to 2-3 days per week per
+            member, never consecutive days — turning the tile into
+            an occasional offer rather than a daily prompt.
+
+            Width matches the surrounding section so the tile reads
+            as part of the same column as Today's Reflection above
+            and the three-cell Streak / Tomorrow / Brotherhood strip
+            below — same edges, same horizontal alignment. Vertical
+            margin is balanced top and bottom so it doesn't feel
+            tacked onto either neighbor. */}
+        {userId &&
+          isFeatureUnlocked(
+            userCreatedAt,
+            FEATURE_THRESHOLDS.smallThings,
+          ) &&
+          shouldShowSmallThingToday(userId) && (
+            // Symmetric padding (not margin) so the tile sits visually
+            // equidistant between Today's Reflection (above) and the
+            // Streak / Tomorrow / Brotherhood strip (below). The strip
+            // wrapper has no top margin of its own, AND uses `border-y`
+            // which fights margin-collapse on some browsers — using
+            // padding on a div wrapper guarantees the gap renders.
+            <div className="py-10 md:py-12">
+              <SmallThing userId={userId} />
+            </div>
+          )}
+
+        {/* LINEAGE DOOR — once-shown announcement that the Lineage
+            room exists in the profile. Renders only at day 90+ and
+            only if the member hasn't seen it before (or is in
+            preview mode). After dismissal, the LineageDoorCard
+            self-hides for the session and writes the timestamp so
+            it never returns. */}
+        {userId &&
+          isFeatureUnlocked(
+            userCreatedAt,
+            FEATURE_THRESHOLDS.lineage,
+          ) && (
+            <div className="py-2 md:py-3">
+              <LineageDoorCard
+                userId={userId}
+                lineageDoorSeenAt={lineageDoorSeenAt}
+              />
+            </div>
+          )}
 
         {/* GREETING STRIP — orientation cards (Streak / Tomorrow /
             Brotherhood). Desktop: three cells in a row. Mobile: one

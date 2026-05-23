@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { useTheme } from "@/app/components/themeProvider";
+import { VentInput } from "@/app/components/ventField";
 import { serif, sans } from "@/lib/fonts";
 import { Globe, Plus, Trash } from "@/app/components/icons";
 import { Toast, type ToastState } from "@/app/components/toast";
@@ -68,6 +70,9 @@ function timeAgo(value: string) {
 }
 
 export default function AdminExternalReview() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [items, setItems] = useState<ExternalContent[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [loading, setLoading] = useState(true);
@@ -336,7 +341,7 @@ export default function AdminExternalReview() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Loading external content…
           </p>
@@ -355,7 +360,7 @@ export default function AdminExternalReview() {
             Restricted
           </p>
           <h1
-            className={`${serif.className} mt-4 text-4xl font-medium text-stone-900`}
+            className={`${serif.className} mt-4 text-4xl font-medium text-[var(--sh-text-primary)]`}
           >
             {authzError}
           </h1>
@@ -395,7 +400,11 @@ export default function AdminExternalReview() {
           <div className="flex gap-2">
             <Link
               href="/admin/blog"
-              className="border border-stone-300 bg-white/70 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
+              className={`border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] ${
+                isDusk
+                  ? "border-white/15 bg-black/40"
+                  : "border-[var(--sh-border-medium)] bg-white/70"
+              }`}
             >
               Internal Blog →
             </Link>
@@ -417,11 +426,11 @@ export default function AdminExternalReview() {
               </p>
             </div>
             <h1
-              className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-stone-900 md:text-6xl`}
+              className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-6xl`}
             >
               External links.
             </h1>
-            <p className="mt-3 max-w-xl text-sm leading-relaxed text-stone-600">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               RSS feeds from {sources.length} source
               {sources.length === 1 ? "" : "s"} get classified by pillar and
               relevance. Approve what fits; reject what doesn&apos;t.
@@ -451,11 +460,21 @@ export default function AdminExternalReview() {
               <span>{ingesting ? "Ingesting…" : "Run Ingestion"}</span>
             </button>
             {ingestMenuOpen && !ingesting && (
-              <div className="absolute right-0 top-full z-30 mt-2 w-64 border border-stone-300 bg-white shadow-lg">
+              <div
+                className={`absolute right-0 top-full z-30 mt-2 w-64 border shadow-lg ${
+                  isDusk
+                    ? "border-white/10 bg-[#1a1614] backdrop-blur-md"
+                    : "border-[var(--sh-border-medium)] bg-white"
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => runIngestion()}
-                  className="block w-full border-b border-stone-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:bg-[#f8f4ed]"
+                  className={`block w-full border-b px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition ${
+                    isDusk
+                      ? "border-white/5 hover:bg-white/[0.05]"
+                      : "border-[var(--sh-border-subtle)] hover:bg-[#f8f4ed]"
+                  }`}
                 >
                   All active sources
                 </button>
@@ -466,7 +485,11 @@ export default function AdminExternalReview() {
                       key={s.id}
                       type="button"
                       onClick={() => runIngestion(s.id)}
-                      className="block w-full border-b border-stone-200 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition last:border-b-0 hover:bg-[#f8f4ed]"
+                      className={`block w-full border-b px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition last:border-b-0 ${
+                        isDusk
+                          ? "border-white/5 hover:bg-white/[0.05]"
+                          : "border-[var(--sh-border-subtle)] hover:bg-[#f8f4ed]"
+                      }`}
                     >
                       {s.name}
                     </button>
@@ -477,7 +500,13 @@ export default function AdminExternalReview() {
         </motion.div>
 
         {/* TABS + FILTERS */}
-        <div className="mb-6 flex flex-col gap-4 border-y border-stone-200 bg-white/40 px-5 py-4 backdrop-blur-sm">
+        <div
+          className={`mb-6 flex flex-col gap-4 border-y px-5 py-4 backdrop-blur-sm ${
+            isDusk
+              ? "border-white/10 bg-black/25"
+              : "border-[var(--sh-border-subtle)] bg-white/40"
+          }`}
+        >
           <div className="flex flex-wrap gap-2">
             {(["drafts", "published", "rejected"] as const).map((t) => (
               <button
@@ -527,7 +556,11 @@ export default function AdminExternalReview() {
             <select
               value={sourceFilter}
               onChange={(e) => setSourceFilter(e.target.value)}
-              className="border border-stone-300 bg-[#f8f4ed] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-700 outline-none focus:border-[#a9793d]"
+              className={`border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] outline-none focus:border-[var(--sh-accent-gold)] ${
+                isDusk
+                  ? "border-white/15 bg-black/40 text-stone-100"
+                  : "border-[var(--sh-border-medium)] bg-[#f8f4ed]"
+              }`}
             >
               <option value="all">All Sources</option>
               {sources.map((s) => (
@@ -541,9 +574,15 @@ export default function AdminExternalReview() {
 
         {/* LIST */}
         {visible.length === 0 ? (
-          <div className="border border-stone-200 bg-white p-8">
+          <div
+            className={`border p-8 ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-sm"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
+          >
             <p
-              className={`${serif.className} text-2xl italic text-stone-700`}
+              className={`${serif.className} text-2xl italic text-[var(--sh-text-secondary)]`}
             >
               {tab === "drafts"
                 ? "Nothing waiting for review."
@@ -551,7 +590,7 @@ export default function AdminExternalReview() {
                   ? "No approved links yet."
                   : "No rejected links."}
             </p>
-            <p className="mt-2 text-sm text-stone-500">
+            <p className="mt-2 text-sm text-[var(--sh-text-tertiary)]">
               {tab === "drafts"
                 ? "Hit Run Ingestion to pull fresh content from active sources."
                 : "Approved external links appear on /members-blog."}
@@ -569,7 +608,9 @@ export default function AdminExternalReview() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white p-5 transition md:p-6"
+                  className={`p-5 transition md:p-6 ${
+                    isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+                  }`}
                   style={{
                     border: "1px solid #e7e5e4",
                     borderLeft: `3px solid ${accent}`,
@@ -577,20 +618,28 @@ export default function AdminExternalReview() {
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-2">
                     <span
-                      className="border bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em]"
+                      className={`border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] ${
+                        isDusk ? "bg-white/[0.05]" : "bg-white"
+                      }`}
                       style={{ borderColor: accent, color: accent }}
                     >
                       {it.pillar ?? "—"}
                     </span>
-                    <span className="border border-stone-300 bg-[#f8f4ed] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-600">
+                    <span
+                      className={`border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] ${
+                        isDusk
+                          ? "border-white/15 bg-white/[0.05]"
+                          : "border-[var(--sh-border-medium)] bg-[#f8f4ed]"
+                      }`}
+                    >
                       {it.source_name}
                     </span>
                     {it.relevance_score !== null && (
-                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                         {it.relevance_score}% relevant
                       </span>
                     )}
-                    <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">
+                    <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-text-muted)]">
                       fetched {timeAgo(it.fetched_at)}
                     </span>
                   </div>
@@ -598,21 +647,21 @@ export default function AdminExternalReview() {
                     href={it.external_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${serif.className} block text-2xl font-medium leading-tight text-stone-900 hover:underline md:text-3xl`}
+                    className={`${serif.className} block text-2xl font-medium leading-tight text-[var(--sh-text-primary)] hover:underline md:text-3xl`}
                   >
                     {it.title} ↗
                   </a>
                   {it.summary && (
-                    <p className="mt-2 leading-relaxed text-stone-600">
+                    <p className="mt-2 leading-relaxed text-[var(--sh-text-secondary)]">
                       {it.summary}
                     </p>
                   )}
                   {it.classification_reasoning && (
-                    <details className="mt-3 text-xs text-stone-500">
+                    <details className="mt-3 text-xs text-[var(--sh-text-tertiary)]">
                       <summary className="cursor-pointer font-bold uppercase tracking-[0.22em] hover:text-[#a9793d]">
                         AI reasoning
                       </summary>
-                      <p className="mt-2 italic text-stone-500">
+                      <p className="mt-2 italic text-[var(--sh-text-tertiary)]">
                         {it.classification_reasoning}
                       </p>
                     </details>
@@ -634,7 +683,7 @@ export default function AdminExternalReview() {
                           type="button"
                           onClick={() => reject(it.id)}
                           disabled={isBusy}
-                          className="border border-stone-300 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
+                          className="border border-[var(--sh-border-medium)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
                         >
                           Reject
                         </button>
@@ -645,7 +694,7 @@ export default function AdminExternalReview() {
                         type="button"
                         onClick={() => unpublish(it.id)}
                         disabled={isBusy}
-                        className="border border-stone-300 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-stone-400 disabled:opacity-60"
+                        className="border border-[var(--sh-border-medium)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-stone-400 disabled:opacity-60"
                       >
                         Unpublish
                       </button>
@@ -655,7 +704,7 @@ export default function AdminExternalReview() {
                         type="button"
                         onClick={() => unreject(it.id)}
                         disabled={isBusy}
-                        className="border border-stone-300 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-[#a9793d] hover:text-[#a9793d] disabled:opacity-60"
+                        className="border border-[var(--sh-border-medium)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[#a9793d] hover:text-[#a9793d] disabled:opacity-60"
                       >
                         Move To Drafts
                       </button>
@@ -664,7 +713,7 @@ export default function AdminExternalReview() {
                       type="button"
                       onClick={() => hardDelete(it.id)}
                       disabled={isBusy}
-                      className="inline-flex items-center gap-2 border border-stone-300 px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
+                      className="inline-flex items-center gap-2 border border-[var(--sh-border-medium)] px-5 py-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600 disabled:opacity-60"
                     >
                       <Trash size={12} /> Delete
                     </button>
@@ -676,14 +725,20 @@ export default function AdminExternalReview() {
         )}
 
         {/* SOURCES BLOCK */}
-        <div className="mt-10 border border-stone-200 bg-white p-6">
+        <div
+          className={`mt-10 border p-6 ${
+            isDusk
+              ? "border-white/10 bg-black/30 backdrop-blur-md"
+              : "border-[var(--sh-border-subtle)] bg-white"
+          }`}
+        >
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
                 Active Sources
               </p>
               <h2
-                className={`${serif.className} mt-2 text-3xl font-medium text-stone-900`}
+                className={`${serif.className} mt-2 text-3xl font-medium text-[var(--sh-text-primary)]`}
               >
                 Where these come from.
               </h2>
@@ -692,7 +747,7 @@ export default function AdminExternalReview() {
               <button
                 type="button"
                 onClick={() => setShowAddSource((v) => !v)}
-                className="inline-flex items-center gap-2 border border-stone-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d]"
+                className="inline-flex items-center gap-2 border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[#a9793d]"
               >
                 <Plus size={12} /> {showAddSource ? "Cancel" : "Add Manually"}
               </button>
@@ -726,15 +781,19 @@ export default function AdminExternalReview() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="mt-5 grid gap-3 border border-stone-200 bg-[#f8f4ed] p-5 md:grid-cols-2"
+              className={`mt-5 grid gap-3 border p-5 md:grid-cols-2 ${
+                isDusk
+                  ? "border-white/10 bg-white/[0.03]"
+                  : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+              }`}
             >
-              <input
+              <VentInput
                 value={newSource.name}
                 onChange={(e) =>
                   setNewSource({ ...newSource, name: e.target.value })
                 }
                 placeholder="Source name (e.g. APA)"
-                className="border border-stone-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#a9793d]"
+                compact
               />
               <select
                 value={newSource.trust_tier}
@@ -747,35 +806,42 @@ export default function AdminExternalReview() {
                       | "caution",
                   })
                 }
-                className="border border-stone-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#a9793d]"
+                className={`border px-4 py-3 text-sm outline-none focus:border-[var(--sh-accent-gold)] ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 text-stone-100"
+                    : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)]"
+                }`}
               >
                 <option value="high">Trust: High</option>
                 <option value="standard">Trust: Standard</option>
                 <option value="caution">Trust: Caution</option>
               </select>
-              <input
+              <VentInput
                 value={newSource.base_url}
                 onChange={(e) =>
                   setNewSource({ ...newSource, base_url: e.target.value })
                 }
                 placeholder="Base URL (https://example.org)"
-                className="border border-stone-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#a9793d] md:col-span-2"
+                compact
+                className="md:col-span-2"
               />
-              <input
+              <VentInput
                 value={newSource.feed_url}
                 onChange={(e) =>
                   setNewSource({ ...newSource, feed_url: e.target.value })
                 }
                 placeholder="Feed URL (https://example.org/feed/)"
-                className="border border-stone-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#a9793d] md:col-span-2"
+                compact
+                className="md:col-span-2"
               />
-              <input
+              <VentInput
                 value={newSource.description}
                 onChange={(e) =>
                   setNewSource({ ...newSource, description: e.target.value })
                 }
                 placeholder="One-line description (optional)"
-                className="border border-stone-300 bg-white px-4 py-3 text-sm outline-none focus:border-[#a9793d] md:col-span-2"
+                compact
+                className="md:col-span-2"
               />
               <button
                 type="button"
@@ -795,13 +861,17 @@ export default function AdminExternalReview() {
                 value={suggestFocus}
                 onChange={(e) => setSuggestFocus(e.target.value)}
                 placeholder="Optional focus (e.g. 'somatic practice', 'fatherhood')"
-                className="flex-1 border border-stone-300 bg-[#f8f4ed] px-4 py-2 text-xs outline-none focus:border-[#a9793d]"
+                className={`flex-1 border px-4 py-2 text-xs outline-none focus:border-[var(--sh-accent-gold)] ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
+                    : "border-[var(--sh-border-medium)] bg-[#f8f4ed]"
+                }`}
               />
               <button
                 type="button"
                 onClick={fetchSuggestions}
                 disabled={suggesting}
-                className="border border-stone-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] disabled:opacity-60"
+                className="border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[#a9793d] disabled:opacity-60"
               >
                 Refresh
               </button>
@@ -811,13 +881,13 @@ export default function AdminExternalReview() {
           {/* SUGGESTIONS LIST */}
           {suggestions.length > 0 && (
             <div className="mt-5 space-y-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">
+              <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]">
                 AI Suggestions · Validated feeds appear first
               </p>
               {suggestions.map((s, idx) => (
                 <div
                   key={`${s.name}-${idx}`}
-                  className="bg-[#f8f4ed] p-4"
+                  className={`p-4 ${isDusk ? "bg-white/[0.03]" : "bg-[#f8f4ed]"}`}
                   style={{
                     border: "1px solid #e7e5e4",
                     borderLeft: `3px solid ${
@@ -826,7 +896,7 @@ export default function AdminExternalReview() {
                   }}
                 >
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-bold text-stone-900">{s.name}</span>
+                    <span className="font-bold text-[var(--sh-text-primary)]">{s.name}</span>
                     <span
                       className="text-[9px] font-bold uppercase tracking-[0.22em]"
                       style={{
@@ -851,15 +921,15 @@ export default function AdminExternalReview() {
                         : `✗ Feed failed (${s.feed_status})`}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-stone-700">
+                  <p className="mt-2 text-sm text-[var(--sh-text-secondary)]">
                     {s.description}
                   </p>
                   {s.reasoning && (
-                    <p className="mt-1 text-xs italic text-stone-500">
+                    <p className="mt-1 text-xs italic text-[var(--sh-text-tertiary)]">
                       Why: {s.reasoning}
                     </p>
                   )}
-                  <p className="mt-2 truncate text-[11px] text-stone-500">
+                  <p className="mt-2 truncate text-[11px] text-[var(--sh-text-tertiary)]">
                     {s.feed_url || s.base_url}
                   </p>
                   <div className="mt-3 flex gap-2">
@@ -883,7 +953,7 @@ export default function AdminExternalReview() {
                           suggestions.filter((_, i) => i !== idx),
                         )
                       }
-                      className="border border-stone-300 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-stone-400"
+                      className="border border-[var(--sh-border-medium)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-stone-400"
                     >
                       Dismiss
                     </button>
@@ -892,7 +962,7 @@ export default function AdminExternalReview() {
                         href={s.base_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="border border-stone-300 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-[#a9793d]"
+                        className="border border-[var(--sh-border-medium)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[#a9793d]"
                       >
                         Check Site ↗
                       </a>
@@ -904,14 +974,14 @@ export default function AdminExternalReview() {
           )}
 
           {/* EXISTING SOURCES LIST */}
-          <div className="mt-6 divide-y divide-stone-200 border-t border-stone-200 pt-2">
+          <div className="mt-6 divide-y divide-stone-200 border-t border-[var(--sh-border-subtle)] pt-2">
             {sources.map((s) => (
               <div
                 key={s.id}
                 className="flex flex-wrap items-center gap-4 py-3"
               >
                 <span
-                  className="inline-flex items-center gap-2 font-bold text-stone-900"
+                  className="inline-flex items-center gap-2 font-bold text-[var(--sh-text-primary)]"
                   style={{ opacity: s.is_active ? 1 : 0.5 }}
                 >
                   {s.name}
@@ -929,10 +999,10 @@ export default function AdminExternalReview() {
                     {s.trust_tier}
                   </span>
                 </span>
-                <span className="truncate text-xs text-stone-500">
+                <span className="truncate text-xs text-[var(--sh-text-tertiary)]">
                   {s.feed_url}
                 </span>
-                <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                   {s.last_fetched_at
                     ? `last run ${timeAgo(s.last_fetched_at)}`
                     : "never run"}
@@ -940,7 +1010,7 @@ export default function AdminExternalReview() {
                 <button
                   type="button"
                   onClick={() => toggleSource(s)}
-                  className="border border-stone-300 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-600 transition hover:border-[#a9793d]"
+                  className="border border-[var(--sh-border-medium)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[#a9793d]"
                 >
                   {s.is_active ? "Pause" : "Activate"}
                 </button>
@@ -951,7 +1021,7 @@ export default function AdminExternalReview() {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
+      <footer className="relative z-10 mt-12 border-t border-[var(--sh-border-subtle)] bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
@@ -962,15 +1032,15 @@ export default function AdminExternalReview() {
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               Crisis Line
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               <span className="font-bold text-[#a9793d]">988</span> — 24/7. Free.
               Confidential.
             </p>

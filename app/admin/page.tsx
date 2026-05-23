@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
 import {
   Anchor as AnchorIcon,
@@ -101,6 +102,9 @@ function timeAgo(value: string) {
 }
 
 export default function AdminDashboard() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [adminName, setAdminName] = useState<string>("Admin");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [drafts, setDrafts] = useState<DraftPost[]>([]);
@@ -294,7 +298,7 @@ export default function AdminDashboard() {
             }}
           />
           <p
-            className={`${serif.className} mt-8 text-2xl italic text-stone-700`}
+            className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
             Loading admin console…
           </p>
@@ -313,7 +317,7 @@ export default function AdminDashboard() {
             Restricted
           </p>
           <h1
-            className={`${serif.className} mt-4 text-4xl font-medium text-stone-900`}
+            className={`${serif.className} mt-4 text-4xl font-medium text-[var(--sh-text-primary)]`}
           >
             {authzError}
           </h1>
@@ -326,7 +330,7 @@ export default function AdminDashboard() {
             </Link>
             <Link
               href="/dashboard"
-              className="border border-stone-300 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 hover:border-[#a9793d]"
+              className="border border-[var(--sh-border-medium)] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] hover:border-[#a9793d]"
             >
               Member Dashboard
             </Link>
@@ -347,7 +351,9 @@ export default function AdminDashboard() {
       <section className="relative z-10 mx-auto max-w-7xl px-4 py-8 md:px-8">
         {/* TOP NAV — strong admin marker */}
         <div
-          className="mb-6 border-l-[3px] bg-white/40 px-5 py-4 backdrop-blur-sm"
+          className={`mb-6 border-l-[3px] px-5 py-4 backdrop-blur-sm ${
+            isDusk ? "bg-black/30" : "bg-white/40"
+          }`}
           style={{ borderLeftColor: GOLD_DEEP }}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -366,7 +372,11 @@ export default function AdminDashboard() {
               <Link
                 href="/admin/blog"
                 aria-label="Blog review"
-                className="group relative inline-flex items-center overflow-hidden border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
+                className={`group relative inline-flex items-center overflow-hidden border p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] md:gap-2 md:px-4 ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 hover:bg-white/[0.06]"
+                    : "border-[var(--sh-border-medium)] bg-white/70 hover:bg-white"
+                }`}
               >
                 <Book size={12} />
                 <span className="hidden md:inline">Blog Review</span>
@@ -382,7 +392,11 @@ export default function AdminDashboard() {
               <Link
                 href="/admin/external"
                 aria-label="External content"
-                className="group relative inline-flex items-center overflow-hidden border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
+                className={`group relative inline-flex items-center overflow-hidden border p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] md:gap-2 md:px-4 ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 hover:bg-white/[0.06]"
+                    : "border-[var(--sh-border-medium)] bg-white/70 hover:bg-white"
+                }`}
               >
                 <Globe size={12} />
                 <span className="hidden md:inline">External Content</span>
@@ -398,7 +412,11 @@ export default function AdminDashboard() {
               <Link
                 href="/admin/moderation"
                 aria-label="Moderation"
-                className="group relative inline-flex items-center overflow-hidden border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
+                className={`group relative inline-flex items-center overflow-hidden border p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] md:gap-2 md:px-4 ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 hover:bg-white/[0.06]"
+                    : "border-[var(--sh-border-medium)] bg-white/70 hover:bg-white"
+                }`}
               >
                 {/* Inline flag glyph — same line-art family as icons.tsx */}
                 <svg
@@ -427,7 +445,11 @@ export default function AdminDashboard() {
               <Link
                 href="/dashboard"
                 aria-label="Member view"
-                className="inline-flex items-center border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
+                className={`inline-flex items-center border p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] md:gap-2 md:px-4 ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 hover:bg-white/[0.06]"
+                    : "border-[var(--sh-border-medium)] bg-white/70 hover:bg-white"
+                }`}
               >
                 <UserIcon size={12} />
                 <span className="hidden md:inline">Member View</span>
@@ -436,7 +458,11 @@ export default function AdminDashboard() {
                 type="button"
                 onClick={handleLogout}
                 aria-label="Log out"
-                className="inline-flex items-center border border-stone-300 bg-white/70 p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] hover:bg-white md:gap-2 md:px-4"
+                className={`inline-flex items-center border p-2.5 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] md:gap-2 md:px-4 ${
+                  isDusk
+                    ? "border-white/15 bg-black/40 hover:bg-white/[0.06]"
+                    : "border-[var(--sh-border-medium)] bg-white/70 hover:bg-white"
+                }`}
               >
                 <Logout size={12} />
                 <span className="hidden md:inline">Logout</span>
@@ -456,7 +482,7 @@ export default function AdminDashboard() {
             Overview
           </p>
           <h1
-            className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-stone-900 md:text-6xl`}
+            className={`${serif.className} mt-3 text-5xl font-medium leading-tight text-[var(--sh-text-primary)] md:text-6xl`}
           >
             The harbor at a glance.
           </h1>
@@ -520,13 +546,17 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="border border-stone-200 bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)] lg:col-span-2"
+            className={`border p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)] lg:col-span-2 ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-md"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
           >
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
               Pillar Distribution
             </p>
             <h2
-              className={`${serif.className} mt-2 text-3xl font-medium text-stone-900`}
+              className={`${serif.className} mt-2 text-3xl font-medium text-[var(--sh-text-primary)]`}
             >
               Where members stand.
             </h2>
@@ -552,7 +582,7 @@ export default function AdminDashboard() {
                         />
                         {p.label}
                       </span>
-                      <span className="text-xs font-bold text-stone-500">
+                      <span className="text-xs font-bold text-[var(--sh-text-tertiary)]">
                         {p.count} · {p.percent}%
                       </span>
                     </div>
@@ -576,19 +606,23 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.25 }}
-            className="border border-stone-200 bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)]"
+            className={`border p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)] ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-md"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
           >
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
               Growth
             </p>
             <h2
-              className={`${serif.className} mt-2 text-3xl font-medium text-stone-900`}
+              className={`${serif.className} mt-2 text-3xl font-medium text-[var(--sh-text-primary)]`}
             >
               Last 30 days.
             </h2>
             <div className="mt-6 space-y-4">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                   New Members
                 </p>
                 <p
@@ -597,22 +631,22 @@ export default function AdminDashboard() {
                   {stats?.new_members_month ?? 0}
                 </p>
               </div>
-              <div className="border-t border-stone-200 pt-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+              <div className="border-t border-[var(--sh-border-subtle)] pt-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                   Total Messages
                 </p>
                 <p
-                  className={`${serif.className} mt-1 text-3xl italic text-stone-700`}
+                  className={`${serif.className} mt-1 text-3xl italic text-[var(--sh-text-secondary)]`}
                 >
                   {stats?.total_messages ?? 0}
                 </p>
               </div>
-              <div className="border-t border-stone-200 pt-4">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500">
+              <div className="border-t border-[var(--sh-border-subtle)] pt-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                   Roadmap Steps Completed
                 </p>
                 <p
-                  className={`${serif.className} mt-1 text-3xl italic text-stone-700`}
+                  className={`${serif.className} mt-1 text-3xl italic text-[var(--sh-text-secondary)]`}
                 >
                   {stats?.total_steps_completed ?? 0}
                 </p>
@@ -628,7 +662,11 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="border border-stone-200 bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)]"
+            className={`border p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)] ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-md"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
           >
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -636,7 +674,7 @@ export default function AdminDashboard() {
                   Drafts Awaiting Review
                 </p>
                 <h2
-                  className={`${serif.className} mt-1 text-2xl font-medium text-stone-900`}
+                  className={`${serif.className} mt-1 text-2xl font-medium text-[var(--sh-text-primary)]`}
                 >
                   {drafts.length === 0
                     ? "Nothing pending."
@@ -651,7 +689,7 @@ export default function AdminDashboard() {
               </Link>
             </div>
             {drafts.length === 0 ? (
-              <p className="text-sm text-stone-500">
+              <p className="text-sm text-[var(--sh-text-tertiary)]">
                 Generate fresh drafts from the Blog Review page.
               </p>
             ) : (
@@ -662,12 +700,18 @@ export default function AdminDashboard() {
                     <Link
                       key={d.id}
                       href="/admin/blog"
-                      className="block border border-stone-200 bg-[#f8f4ed] p-4 transition hover:border-[#a9793d]/40"
+                      className={`block border p-4 transition hover:border-[var(--sh-accent-gold)]/40 ${
+                        isDusk
+                          ? "border-white/10 bg-white/[0.03]"
+                          : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+                      }`}
                       style={{ borderLeft: `3px solid ${accent}` }}
                     >
                       <div className="mb-2 flex items-center gap-2">
                         <span
-                          className="border bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em]"
+                          className={`border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] ${
+                            isDusk ? "bg-white/[0.05]" : "bg-white"
+                          }`}
                           style={{
                             borderColor: accent,
                             color: accent,
@@ -676,21 +720,21 @@ export default function AdminDashboard() {
                           {d.pillar}
                         </span>
                         {d.is_ai_generated && (
-                          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                             AI
                           </span>
                         )}
-                        <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.18em] text-stone-400">
+                        <span className="ml-auto text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--sh-text-muted)]">
                           {timeAgo(d.created_at)}
                         </span>
                       </div>
                       <p
-                        className={`${serif.className} text-xl font-medium leading-tight text-stone-900`}
+                        className={`${serif.className} text-xl font-medium leading-tight text-[var(--sh-text-primary)]`}
                       >
                         {d.title}
                       </p>
                       {(d.summary || d.excerpt) && (
-                        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-stone-600">
+                        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
                           {d.summary || d.excerpt}
                         </p>
                       )}
@@ -706,18 +750,22 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.35 }}
-            className="border border-stone-200 bg-white p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)]"
+            className={`border p-6 shadow-[0_12px_40px_rgba(0,0,0,0.05)] ${
+              isDusk
+                ? "border-white/10 bg-black/30 backdrop-blur-md"
+                : "border-[var(--sh-border-subtle)] bg-white"
+            }`}
           >
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
               Generation Log
             </p>
             <h2
-              className={`${serif.className} mt-1 text-2xl font-medium text-stone-900`}
+              className={`${serif.className} mt-1 text-2xl font-medium text-[var(--sh-text-primary)]`}
             >
               Recent runs.
             </h2>
             {logs.length === 0 ? (
-              <p className="mt-4 text-sm text-stone-500">
+              <p className="mt-4 text-sm text-[var(--sh-text-tertiary)]">
                 No generation attempts yet. Drafts will appear in the log once
                 you run the function.
               </p>
@@ -728,22 +776,24 @@ export default function AdminDashboard() {
                   return (
                     <div
                       key={log.id}
-                      className="border-l-[3px] bg-[#f8f4ed] px-4 py-2.5 text-xs"
+                      className={`border-l-[3px] px-4 py-2.5 text-xs ${
+                        isDusk ? "bg-white/[0.03]" : "bg-[#f8f4ed]"
+                      }`}
                       style={{
                         borderLeftColor: ok ? GOLD_DEEP : "#a05a3c",
                       }}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold uppercase tracking-[0.22em] text-stone-700">
+                        <span className="font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
                           {log.pillar ?? "—"} · {log.status}
                         </span>
-                        <span className="text-[10px] font-bold text-stone-400">
+                        <span className="text-[10px] font-bold text-[var(--sh-text-muted)]">
                           {timeAgo(log.created_at)}
                         </span>
                       </div>
                       {log.message && (
                         <p
-                          className="mt-1 leading-relaxed text-stone-500"
+                          className="mt-1 leading-relaxed text-[var(--sh-text-tertiary)]"
                           title={log.message}
                         >
                           {log.message.length > 120
@@ -761,7 +811,13 @@ export default function AdminDashboard() {
       </section>
 
       {/* FOOTER */}
-      <footer className="relative z-10 mt-12 border-t border-stone-200 bg-[#efe8dc]/70 px-6 py-10 backdrop-blur-sm">
+      <footer
+        className={`relative z-10 mt-12 border-t px-6 py-10 backdrop-blur-sm ${
+          isDusk
+            ? "border-white/10 bg-black/30"
+            : "border-[var(--sh-border-subtle)] bg-[#efe8dc]/70"
+        }`}
+      >
         <div className="mx-auto grid max-w-7xl gap-6 md:grid-cols-3 md:items-center">
           <div>
             <p className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d]">
@@ -772,15 +828,15 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="text-center">
-            <p className={`${serif.className} text-base italic text-stone-600`}>
+            <p className={`${serif.className} text-base italic text-[var(--sh-text-secondary)]`}>
               The harbor is patient.
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
               Crisis Line
             </p>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               <span className="font-bold text-[#a9793d]">988</span> — 24/7.
               Free. Confidential.
             </p>
@@ -804,27 +860,36 @@ function StatCard({
   Icon: React.ComponentType<{ size?: number; className?: string }>;
   highlight?: boolean;
 }) {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   return (
     <div
-      className="border bg-white p-5 shadow-[0_8px_24px_rgba(0,0,0,0.04)]"
+      className={`border p-5 shadow-[0_8px_24px_rgba(0,0,0,0.04)] ${
+        isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+      }`}
       style={{
-        borderColor: highlight ? GOLD : "#e7e5e4",
+        borderColor: highlight
+          ? GOLD
+          : isDusk
+            ? "rgba(255,255,255,0.1)"
+            : "#e7e5e4",
         borderLeftWidth: highlight ? "3px" : "1px",
         borderLeftColor: highlight ? GOLD_DEEP : undefined,
       }}
     >
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]">
           {label}
         </p>
         <Icon size={14} className="text-[#a9793d]" />
       </div>
       <p
-        className={`${serif.className} mt-3 text-4xl font-medium italic text-stone-900`}
+        className={`${serif.className} mt-3 text-4xl font-medium italic text-[var(--sh-text-primary)]`}
       >
         {value.toLocaleString()}
       </p>
-      <p className="mt-2 text-xs text-stone-500">{sub}</p>
+      <p className="mt-2 text-xs text-[var(--sh-text-tertiary)]">{sub}</p>
     </div>
   );
 }
@@ -852,6 +917,9 @@ function RegistrationGatePanel({
   toggling: boolean;
   message: string | null;
 }) {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const open = settings?.registration_open !== false;
   const stateColor = open ? MOSS : "#b14a3a";
   const stateLabel = open ? "OPEN" : "CLOSED";
@@ -868,12 +936,14 @@ function RegistrationGatePanel({
     >
       {/* MAIN GATE CARD */}
       <div
-        className="border-l-[3px] bg-white p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)]"
+        className={`border-l-[3px] p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] ${
+          isDusk ? "bg-black/30 backdrop-blur-sm" : "bg-white"
+        }`}
         style={{ borderLeftColor: stateColor }}
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]">
               Registration Gate
             </p>
             <div className="mt-3 flex items-center gap-3">
@@ -888,11 +958,11 @@ function RegistrationGatePanel({
                 {stateLabel}
               </h3>
             </div>
-            <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
               {stateBlurb}
             </p>
             {settings?.updated_at && (
-              <p className="mt-2 text-[11px] text-stone-400">
+              <p className="mt-2 text-[11px] text-[var(--sh-text-muted)]">
                 Last changed{" "}
                 {new Date(settings.updated_at).toLocaleString(undefined, {
                   month: "short",
@@ -922,7 +992,7 @@ function RegistrationGatePanel({
                   ? "Close The Harbor"
                   : "Open The Harbor"}
             </button>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-stone-400 md:text-right">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--sh-text-muted)] md:text-right">
               Effective immediately
             </p>
           </div>
@@ -930,7 +1000,9 @@ function RegistrationGatePanel({
 
         {message && (
           <div
-            className="mt-5 border-l-2 bg-stone-50 px-4 py-3 text-xs font-semibold text-stone-700"
+            className={`mt-5 border-l-2 px-4 py-3 text-xs font-semibold text-[var(--sh-text-secondary)] ${
+              isDusk ? "bg-white/[0.05]" : "bg-stone-50"
+            }`}
             style={{ borderLeftColor: stateColor }}
           >
             {message}
@@ -939,18 +1011,24 @@ function RegistrationGatePanel({
       </div>
 
       {/* WAITLIST PANEL */}
-      <div className="border border-stone-200 bg-white p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+      <div
+        className={`border p-6 shadow-[0_8px_24px_rgba(0,0,0,0.04)] ${
+          isDusk
+            ? "border-white/10 bg-black/30 backdrop-blur-sm"
+            : "border-[var(--sh-border-subtle)] bg-white"
+        }`}
+      >
         <div className="flex items-baseline justify-between">
-          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]">
             Waitlist
           </p>
           <p
-            className={`${serif.className} text-3xl font-medium italic text-stone-900`}
+            className={`${serif.className} text-3xl font-medium italic text-[var(--sh-text-primary)]`}
           >
             {waitlistTotal.toLocaleString()}
           </p>
         </div>
-        <p className="mt-1 text-xs text-stone-500">
+        <p className="mt-1 text-xs text-[var(--sh-text-tertiary)]">
           {waitlist.length > 0
             ? `Latest ${waitlist.length} of ${waitlistTotal} captured`
             : "No captures yet"}
@@ -958,7 +1036,7 @@ function RegistrationGatePanel({
 
         <div className="mt-4 max-h-[260px] overflow-y-auto">
           {waitlist.length === 0 ? (
-            <p className="py-6 text-center text-xs text-stone-400">
+            <p className="py-6 text-center text-xs text-[var(--sh-text-muted)]">
               Visitors who hit /register while closed will appear here.
             </p>
           ) : (
@@ -969,14 +1047,14 @@ function RegistrationGatePanel({
                   className="flex items-baseline justify-between py-2.5"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-stone-800">
+                    <p className="truncate text-sm font-semibold text-[var(--sh-text-primary)]">
                       {w.first_name ? `${w.first_name} · ` : ""}
-                      <span className="font-normal text-stone-600">
+                      <span className="font-normal text-[var(--sh-text-secondary)]">
                         {w.email}
                       </span>
                     </p>
                   </div>
-                  <p className="ml-3 shrink-0 text-[10px] uppercase tracking-[0.18em] text-stone-400">
+                  <p className="ml-3 shrink-0 text-[10px] uppercase tracking-[0.18em] text-[var(--sh-text-muted)]">
                     {timeAgo(w.created_at)}
                   </p>
                 </li>

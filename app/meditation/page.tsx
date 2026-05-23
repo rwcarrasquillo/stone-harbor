@@ -1,11 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
 import { serif, sans } from "@/lib/fonts";
+import { supabase } from "@/lib/supabaseClient";
 import { RotatingNatureBackdrop } from "@/app/components/rotatingNatureBackdrop";
-import { BreathCircle, useBreathCycle } from "@/app/components/breathCircle";
+import {
+  BREATH_PATTERNS,
+  BreathCircle,
+  useBreathCycle,
+  type BreathPattern,
+} from "@/app/components/breathCircle";
+import {
+  FEATURE_THRESHOLDS,
+  isFeatureUnlocked,
+} from "@/lib/userProgress";
 
 /**
  * Stone Harbor — Meditation page.
@@ -54,10 +64,45 @@ export default function MeditationPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
 
-  // Box-breath cycle now lives in the shared hook so all three
-  // breath-circle sites (home, dashboard meditation entry, this page)
-  // run the same 4s/4s rhythm from one source of truth.
-  const breathPhase = useBreathCycle();
+  // Account age drives whether the Long Exhale option is visible.
+  // Until day 30, only the box cycle exists — the same as before.
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
+
+  // Which breath pattern the member has chosen for this session.
+  // Defaults to box (4s/4s). Long Exhale (4s/7s) is offered after day 30.
+  // The choice is in-memory only — we don't persist a preference because
+  // the right pattern depends on the day, not on the man's history.
+  const [pattern, setPattern] = useState<BreathPattern>(BREATH_PATTERNS.box);
+  const { phase: breathPhase, phaseDuration } = useBreathCycle(pattern);
+
+  // Fetch created_at on mount so we can decide whether to show the
+  // Long Exhale toggle. Failing silently keeps the page usable even
+  // if the member is offline or unauthenticated (the box cycle still
+  // works without any account data).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (cancelled || !user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("created_at")
+        .eq("id", user.id)
+        .single();
+      if (!cancelled) setUserCreatedAt(data?.created_at ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const longExhaleUnlocked = isFeatureUnlocked(
+    userCreatedAt,
+    FEATURE_THRESHOLDS.longExhale,
+  );
+  const isLongExhale = pattern === BREATH_PATTERNS.longExhale;
 
   async function toggleSound() {
     const audio = audioRef.current;
@@ -148,17 +193,60 @@ export default function MeditationPage() {
 
         {/* Shared BreathCircle component — keeps the rhythm and styling
             identical to the home page and the dashboard entry banner.
-            Size lg = 176px, scales to ~246px on inhale. Outer glow ring
-            on the container provides the cinematic spread; the circle
-            itself is the unified component. */}
+            phaseDuration is fed from the hook so when the member is on
+            Long Exhale (4s in / 7s out), the circle's shrink takes the
+            full 7 seconds rather than animating in 4 and then sitting
+            still. Visual rhythm matches what the body is doing. */}
         <div className="flex items-center justify-center rounded-full shadow-[0_0_80px_rgba(196,147,78,0.25)]">
-          <BreathCircle phase={breathPhase} size="lg" />
+          <BreathCircle
+            phase={breathPhase}
+            size="lg"
+            phaseDuration={phaseDuration}
+          />
         </div>
 
-        <p className="mt-10 max-w-md text-xs leading-relaxed text-white/70 md:mt-14 md:text-sm">
-          {soundOn
-            ? "Breathe with the rhythm. Leave whenever you're ready."
-            : "Tap the speaker to add ambient sound. Or breathe in silence."}
+        {/* PATTERN TOGGLE — only visible once Long Exhale has unlocked
+            (day 30+). Before that the page is identical to its original
+            form. The two options sit side by side as quiet text buttons
+            with no border drama; the active one is gold, the other dim.
+            This is not a settings panel — it's a soft choice between
+            two ways of breathing in this moment. */}
+        {longExhaleUnlocked && (
+          <div className="mt-10 flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.3em] md:mt-14">
+            <button
+              type="button"
+              onClick={() => setPattern(BREATH_PATTERNS.box)}
+              className={`px-3 py-1 transition ${
+                !isLongExhale
+                  ? "text-[#c4934e]"
+                  : "text-white/40 hover:text-white/60"
+              }`}
+              aria-pressed={!isLongExhale}
+            >
+              For the calm
+            </button>
+            <span className="text-white/20">·</span>
+            <button
+              type="button"
+              onClick={() => setPattern(BREATH_PATTERNS.longExhale)}
+              className={`px-3 py-1 transition ${
+                isLongExhale
+                  ? "text-[#c4934e]"
+                  : "text-white/40 hover:text-white/60"
+              }`}
+              aria-pressed={isLongExhale}
+            >
+              For the storm
+            </button>
+          </div>
+        )}
+
+        <p className="mt-6 max-w-md text-xs leading-relaxed text-white/70 md:mt-8 md:text-sm">
+          {isLongExhale
+            ? "Four in. Seven out. For when something is sitting heavy."
+            : soundOn
+              ? "Breathe with the rhythm. Leave whenever you're ready."
+              : "Tap the speaker to add ambient sound. Or breathe in silence."}
         </p>
       </section>
 

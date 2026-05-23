@@ -28,6 +28,13 @@ import { todaysPrompt as sharedTodaysPrompt } from "@/lib/dailyPrompts";
 import { useTheme } from "@/app/components/themeProvider";
 import { PageAmbience } from "@/app/components/pageAmbience";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
+import { BodyCheck, type BodySpot } from "@/app/components/bodyCheck";
+import { SubMoods } from "@/app/components/subMoods";
+import type { Mood } from "@/lib/moods";
+import {
+  FEATURE_THRESHOLDS,
+  isFeatureUnlocked,
+} from "@/lib/userProgress";
 
 // Brand system — matches home + dashboard
 const GOLD = "#c4934e";
@@ -156,9 +163,28 @@ export default function JournalPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [soundOn, setSoundOn] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  // Account age drives progressive disclosure of new healing-path features.
+  // null until the profile loads; treat as "no features unlocked" while null.
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
+  // Body-check overlay state. `pendingBodySpots` holds the result between
+  // overlay-close and journal-entry-save, so the somatic moment can be
+  // linked to the entry it preceded.
+  const [bodyCheckOpen, setBodyCheckOpen] = useState(false);
+  const [pendingBodySpots, setPendingBodySpots] = useState<BodySpot[] | null>(
+    null,
+  );
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [title, setTitle] = useState("");
-  const [mood, setMood] = useState("grounded");
+  const [mood, setMood] = useState<Mood>("grounded");
+  // Fine-grained emotion within the parent mood family. Set by the
+  // SubMoods chip row; resets whenever the parent mood changes since
+  // a sub-mood like "resentful" doesn't carry across to "hopeful."
+  const [moodSpecific, setMoodSpecific] = useState<string | null>(null);
+  // When the textarea has been empty AND focused for >12 seconds, we
+  // surface a gentle one-line nudge underneath: "Start with one word."
+  // This is the 5-second-rule pattern translated to the harbor's voice
+  // — no countdown, no animation, just permission to begin badly.
+  const [showStartNudge, setShowStartNudge] = useState(false);
   const [content, setContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOption, setSortOption] = useState<SortOption>("newest");
@@ -173,6 +199,20 @@ export default function JournalPage() {
     }, 4000);
     return () => clearInterval(id);
   }, []);
+
+  // "Start with one word" nudge — surfaces when the man has the
+  // journal open but hasn't started typing. 12 seconds is the
+  // sweet spot from informal testing: long enough that the line
+  // doesn't appear for someone who's clearly mid-thought, short
+  // enough to catch the man who is staring at a blank box.
+  // Resets whenever he starts typing (content changes) or picks a
+  // new mood (the act of selecting itself is engagement).
+  useEffect(() => {
+    setShowStartNudge(false);
+    if (content.length > 0) return;
+    const id = setTimeout(() => setShowStartNudge(true), 12000);
+    return () => clearTimeout(id);
+  }, [content, mood, moodSpecific]);
 
   async function toggleSound() {
     const audio = audioRef.current;
@@ -202,9 +242,11 @@ export default function JournalPage() {
       return;
     }
     // Suspension gate — keep suspended members off member-facing surfaces.
+    // Also fetch created_at here so we can compute progressive-disclosure
+    // thresholds for features like the body check.
     const { data: gateRow } = await supabase
       .from("profiles")
-      .select("suspended_at")
+      .select("suspended_at, created_at")
       .eq("id", user.id)
       .single();
     if (gateRow?.suspended_at) {
@@ -212,6 +254,7 @@ export default function JournalPage() {
       return;
     }
     setUserId(user.id);
+    setUserCreatedAt(gateRow?.created_at ?? null);
     const { data, error } = await supabase
       .from("journal_entries")
       .select("id, title, content, mood, created_at")
@@ -227,15 +270,38 @@ export default function JournalPage() {
     e.preventDefault();
     if (!userId || !content.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from("journal_entries").insert({
-      user_id: userId,
-      title: title.trim() || null,
-      mood,
-      content: content.trim(),
-    });
-    if (!error) {
+
+    // Insert the journal entry and ask for its id back so we can
+    // optionally link a body_check row to it. mood_specific is null
+    // unless the man explicitly picked a sub-mood — the database
+    // column allows null and the mood map handles either case.
+    const { data: inserted, error } = await supabase
+      .from("journal_entries")
+      .insert({
+        user_id: userId,
+        title: title.trim() || null,
+        mood,
+        mood_specific: moodSpecific,
+        content: content.trim(),
+      })
+      .select("id")
+      .single();
+
+    if (!error && inserted) {
+      // If the man did a body check before writing, link it to this
+      // entry. Body checks are best-effort — a write failure here
+      // should not block the journal flow.
+      if (pendingBodySpots && pendingBodySpots.length >= 0) {
+        await supabase.from("body_checks").insert({
+          user_id: userId,
+          journal_entry_id: inserted.id,
+          spots: pendingBodySpots,
+        });
+        setPendingBodySpots(null);
+      }
       setTitle("");
       setMood("grounded");
+      setMoodSpecific(null);
       setContent("");
       await loadJournal();
     }
@@ -494,7 +560,12 @@ export default function JournalPage() {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() => setMood(option.value)}
+                      onClick={() => {
+                        setMood(option.value as Mood);
+                        // Clear sub-mood when parent mood changes;
+                        // "resentful" doesn't apply to "hopeful," etc.
+                        setMoodSpecific(null);
+                      }}
                       className="flex items-center gap-2 border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] transition"
                       style={{
                         borderColor: active
@@ -530,9 +601,50 @@ export default function JournalPage() {
                 })}
               </div>
 
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
-                Reflection
-              </label>
+              {/* SUB-MOOD CHIPS — gated by FEATURE_THRESHOLDS.subMoods.
+                  Appears around day 60 of the member's account, after he
+                  has used the basic 6-mood picker enough times to feel
+                  its limit organically. Five granular options per parent
+                  mood plus "something else." Selection is optional and
+                  saves to journal_entries.mood_specific. */}
+              {isFeatureUnlocked(
+                userCreatedAt,
+                FEATURE_THRESHOLDS.subMoods,
+              ) && (
+                <SubMoods
+                  mood={mood}
+                  value={moodSpecific}
+                  onChange={setMoodSpecific}
+                />
+              )}
+
+              <div className="mb-2 flex items-baseline justify-between gap-3">
+                <label className="block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
+                  Reflection
+                </label>
+                {/* BODY-CHECK INVITATION — gated by FEATURE_THRESHOLDS.bodyCheck.
+                    Appears in the man's experience around day 30 of his account.
+                    Soft, optional, no completion shame: if he taps it, the
+                    overlay opens; if he ignores it, the journal works as before.
+                    If he already did a check this session, the line becomes a
+                    quiet confirmation so the moment is visible to him. */}
+                {isFeatureUnlocked(
+                  userCreatedAt,
+                  FEATURE_THRESHOLDS.bodyCheck,
+                ) && (
+                  <button
+                    type="button"
+                    onClick={() => setBodyCheckOpen(true)}
+                    className="text-[10px] italic tracking-wide text-[var(--sh-accent-gold)] transition hover:opacity-80"
+                  >
+                    {pendingBodySpots === null
+                      ? "Before you write — one breath in your body?"
+                      : pendingBodySpots.length === 0
+                        ? "Body check complete · adjust"
+                        : `Noticed in: ${pendingBodySpots.join(", ")} · adjust`}
+                  </button>
+                )}
+              </div>
               <VentTextarea
                 required
                 value={content}
@@ -541,6 +653,16 @@ export default function JournalPage() {
                 className="mb-2"
                 placeholder="What do you need to say today?"
               />
+              {/* "Start with one word" — appears only when the textarea
+                  has been empty for 12s. The 5-second-rule pattern, in
+                  the harbor's voice: not a countdown, not pressure, just
+                  permission to begin badly. Fades away the moment he
+                  types anything. */}
+              {showStartNudge && content.length === 0 && (
+                <p className="mb-2 text-[11px] italic leading-relaxed text-[var(--sh-text-tertiary)]">
+                  Start with one word. Any word.
+                </p>
+              )}
               <div className="mb-8 flex items-center justify-between text-xs text-[var(--sh-text-tertiary)]">
                 <span>
                   {wordCount === 0
@@ -826,6 +948,20 @@ export default function JournalPage() {
           </div>
         </div>
       </footer>
+
+      {/* BODY CHECK OVERLAY — invitation only, optional always.
+          Mounted at page level (not inside the form) so the backdrop
+          can cover the full screen. The spots the man taps are held
+          in `pendingBodySpots` until the next journal entry is saved,
+          at which point they are linked to that entry in body_checks. */}
+      <BodyCheck
+        open={bodyCheckOpen}
+        onClose={() => setBodyCheckOpen(false)}
+        onContinue={(spots) => {
+          setPendingBodySpots(spots);
+          setBodyCheckOpen(false);
+        }}
+      />
     </main>
   );
 }

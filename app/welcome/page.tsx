@@ -10,6 +10,11 @@ import { Toast, type ToastState } from "@/app/components/toast";
 import { ThemeToggle } from "@/app/components/themeToggle";
 import { useTheme } from "@/app/components/themeProvider";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { LineageSection } from "@/app/components/lineageSection";
+import {
+  FEATURE_THRESHOLDS,
+  isFeatureUnlocked,
+} from "@/lib/userProgress";
 
 type CompanySuggestion = {
   name: string;
@@ -46,6 +51,13 @@ type ProfileForm = {
   birth_year: string;
   acknowledge_birthday: boolean;
   seasonal_acknowledgments_enabled: boolean;
+  // Lineage — three optional prompts. Plain text. Surfaced via the
+  // LineageSection component once the day-90 disclosure threshold
+  // is reached. Always saved as a regular profile field; if the
+  // member never fills them in, they stay empty strings.
+  lineage_father_grief: string;
+  lineage_father_anger: string;
+  lineage_pattern_to_leave: string;
 };
 
 const relationshipOptions = [
@@ -111,6 +123,9 @@ export default function WelcomePage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   const [userId, setUserId] = useState<string | null>(null);
+  // Account age for progressive disclosure (the Lineage section is
+  // hidden until day 90+).
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<ProfileForm>({
     email: "",
@@ -139,6 +154,9 @@ export default function WelcomePage() {
     birth_year: "",
     acknowledge_birthday: true,
     seasonal_acknowledgments_enabled: true,
+    lineage_father_grief: "",
+    lineage_father_anger: "",
+    lineage_pattern_to_leave: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -204,7 +222,7 @@ export default function WelcomePage() {
     // Suspension gate — suspended members cannot edit profile.
     const { data: gateRow } = await supabase
       .from("profiles")
-      .select("suspended_at")
+      .select("suspended_at, created_at")
       .eq("id", user.id)
       .single();
     if (gateRow?.suspended_at) {
@@ -213,11 +231,12 @@ export default function WelcomePage() {
     }
 
     setUserId(user.id);
+    setUserCreatedAt(gateRow?.created_at ?? null);
 
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled",
+        "email, display_name, username, role, bio, location, healing_stage, privacy_level, avatar_url, cover_url, work, work_company_name, work_company_logo_url, work_company_domain, education, hometown, relationship_status, website, languages, interests, favorite_quote, birth_month, birth_day, birth_year, acknowledge_birthday, seasonal_acknowledgments_enabled, lineage_father_grief, lineage_father_anger, lineage_pattern_to_leave",
       )
       .eq("id", user.id)
       .maybeSingle();
@@ -254,6 +273,9 @@ export default function WelcomePage() {
       acknowledge_birthday: data?.acknowledge_birthday ?? true,
       seasonal_acknowledgments_enabled:
         data?.seasonal_acknowledgments_enabled ?? true,
+      lineage_father_grief: data?.lineage_father_grief ?? "",
+      lineage_father_anger: data?.lineage_father_anger ?? "",
+      lineage_pattern_to_leave: data?.lineage_pattern_to_leave ?? "",
     });
 
     setLoading(false);
@@ -522,6 +544,11 @@ export default function WelcomePage() {
       acknowledge_birthday: formData.acknowledge_birthday,
       seasonal_acknowledgments_enabled:
         formData.seasonal_acknowledgments_enabled,
+      // Lineage. Empty strings are stored as NULL so the columns
+      // reflect "not filled in" rather than "intentionally empty."
+      lineage_father_grief: formData.lineage_father_grief.trim() || null,
+      lineage_father_anger: formData.lineage_father_anger.trim() || null,
+      lineage_pattern_to_leave: formData.lineage_pattern_to_leave.trim() || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -861,6 +888,37 @@ export default function WelcomePage() {
                 }
                 placeholder="Rebuilding isn’t about returning to who I was—it’s about becoming who I was meant to be."
               />
+
+              {/* ────────── LINEAGE ──────────
+                  Day 90 unlock. Three optional prompts about the
+                  inheritance the member carries from his father.
+                  The id="lineage" lets the dashboard's once-shown
+                  LineageDoorCard deep-link directly to this section
+                  via /welcome#lineage. */}
+              {isFeatureUnlocked(
+                userCreatedAt,
+                FEATURE_THRESHOLDS.lineage,
+              ) && (
+                <div id="lineage" className="scroll-mt-24">
+                  <LineageSection
+                    fatherGrief={formData.lineage_father_grief}
+                    fatherAnger={formData.lineage_father_anger}
+                    patternToLeave={formData.lineage_pattern_to_leave}
+                    onChangeFatherGrief={(value) =>
+                      setFormData({ ...formData, lineage_father_grief: value })
+                    }
+                    onChangeFatherAnger={(value) =>
+                      setFormData({ ...formData, lineage_father_anger: value })
+                    }
+                    onChangePatternToLeave={(value) =>
+                      setFormData({
+                        ...formData,
+                        lineage_pattern_to_leave: value,
+                      })
+                    }
+                  />
+                </div>
+              )}
 
               {/* ────────── THE DATES WE NOTICE ──────────
                   Optional birthday capture + two opt-outs that control

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
+import { PageAmbience } from "@/app/components/pageAmbience";
+import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
 const GOLD_DEEP = "#a9793d";
 const MOSS = "#586558";
@@ -48,6 +50,9 @@ const REASON_LABEL: Record<string, string> = {
  * Warnings include a member-visible message (transparency is the policy).
  */
 export default function AdminModerationPage() {
+  const { theme } = useTheme();
+  const isDusk = theme === "dusk";
+
   const [flags, setFlags] = useState<Flag[]>([]);
   const [loading, setLoading] = useState(true);
   const [authzError, setAuthzError] = useState<string | null>(null);
@@ -232,7 +237,7 @@ export default function AdminModerationPage() {
   if (loading) {
     return (
       <main className={`${sans.className} flex min-h-screen items-center justify-center bg-[var(--sh-bg-page)]`}>
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-stone-500">
+        <p className="text-xs font-bold uppercase tracking-[0.3em] text-[var(--sh-text-tertiary)]">
           Loading moderation queue…
         </p>
       </main>
@@ -246,7 +251,7 @@ export default function AdminModerationPage() {
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
             Restricted
           </p>
-          <h1 className={`${serif.className} mt-3 text-3xl text-stone-900`}>
+          <h1 className={`${serif.className} mt-3 text-3xl text-[var(--sh-text-primary)]`}>
             {authzError}
           </h1>
           <Link
@@ -261,9 +266,10 @@ export default function AdminModerationPage() {
   }
 
   return (
-    <main className={`${sans.className} min-h-screen bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}>
+    <main className={`${sans.className} relative min-h-screen overflow-hidden bg-[var(--sh-bg-page)] text-[var(--sh-text-primary)]`}>
       <InactivityGate />
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <PageAmbience />
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-8 md:px-8">
         <div className="mb-6 flex items-center justify-between">
           <Link
             href="/admin"
@@ -271,23 +277,29 @@ export default function AdminModerationPage() {
           >
             ← Admin
           </Link>
-          <div className="inline-flex border border-stone-300 bg-white">
+          <div
+            className={`inline-flex border ${
+              isDusk
+                ? "border-white/15 bg-black/40 backdrop-blur-sm"
+                : "border-[var(--sh-border-medium)] bg-white"
+            }`}
+          >
             <button
               onClick={() => setFilter("pending")}
               className={`px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
                 filter === "pending"
                   ? "bg-[#a9793d] text-white"
-                  : "text-stone-600 hover:text-[#a9793d]"
+                  : "text-[var(--sh-text-secondary)] hover:text-[#a9793d]"
               }`}
             >
               Pending
             </button>
             <button
               onClick={() => setFilter("all")}
-              className={`border-l border-stone-300 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
+              className={`border-l border-[var(--sh-border-medium)] px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
                 filter === "all"
                   ? "bg-[#a9793d] text-white"
-                  : "text-stone-600 hover:text-[#a9793d]"
+                  : "text-[var(--sh-text-secondary)] hover:text-[#a9793d]"
               }`}
             >
               All
@@ -308,16 +320,22 @@ export default function AdminModerationPage() {
           >
             The review queue.
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-stone-600">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--sh-text-secondary)]">
             Member-initiated reports. Read the report, look at the target
             member&apos;s warning count, and decide. Never auto-action;
             always weigh context.
           </p>
         </motion.div>
 
-        <div className="mt-8 overflow-hidden border border-stone-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+        <div
+          className={`mt-8 overflow-hidden border shadow-[0_8px_24px_rgba(0,0,0,0.04)] ${
+            isDusk
+              ? "border-white/10 bg-black/30 backdrop-blur-md"
+              : "border-[var(--sh-border-subtle)] bg-white"
+          }`}
+        >
           {flags.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-stone-400">
+            <p className="px-6 py-10 text-center text-sm text-[var(--sh-text-muted)]">
               {filter === "pending"
                 ? "No pending flags. The harbor is calm."
                 : "No flags on record."}
@@ -329,7 +347,7 @@ export default function AdminModerationPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className="border-l-[3px] bg-stone-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-700"
+                        className="border-l-[3px] bg-stone-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]"
                         style={{
                           borderLeftColor:
                             f.status === "pending"
@@ -341,10 +359,10 @@ export default function AdminModerationPage() {
                       >
                         {f.status}
                       </span>
-                      <span className="text-[11px] uppercase tracking-[0.22em] text-stone-500">
+                      <span className="text-[11px] uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                         {REASON_LABEL[f.reason] ?? f.reason}
                       </span>
-                      <span className="text-[11px] text-stone-400">
+                      <span className="text-[11px] text-[var(--sh-text-muted)]">
                         {new Date(f.created_at).toLocaleString(undefined, {
                           month: "short",
                           day: "numeric",
@@ -354,12 +372,12 @@ export default function AdminModerationPage() {
                       </span>
                     </div>
                     <p
-                      className={`${serif.className} mt-2 text-lg italic text-stone-900`}
+                      className={`${serif.className} mt-2 text-lg italic text-[var(--sh-text-primary)]`}
                     >
                       {f.content_type}
                       {f.content_id ? ` · ${f.content_id.slice(0, 8)}…` : ""}
                     </p>
-                    <p className="mt-1 text-sm text-stone-600">
+                    <p className="mt-1 text-sm text-[var(--sh-text-secondary)]">
                       <span className="font-semibold">Flagged by:</span>{" "}
                       {f.flagger_name ?? "—"}
                       {"  ·  "}
@@ -379,8 +397,8 @@ export default function AdminModerationPage() {
                       )}
                     </p>
                     {f.notes && (
-                      <p className="mt-2 text-sm leading-relaxed text-stone-700">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                      <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                           Reporter note —{" "}
                         </span>
                         {f.notes}
@@ -391,7 +409,9 @@ export default function AdminModerationPage() {
                     <div className="shrink-0">
                       <button
                         onClick={() => openFlag(f)}
-                        className="border border-[#a9793d] bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#a9793d] transition hover:bg-[#a9793d] hover:text-white"
+                        className={`border border-[#a9793d] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#a9793d] transition hover:bg-[#a9793d] hover:text-white ${
+                          isDusk ? "bg-black/40" : "bg-white"
+                        }`}
                       >
                         Review
                       </button>
@@ -412,7 +432,11 @@ export default function AdminModerationPage() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-2xl overflow-hidden border border-stone-200 bg-[#f8f4ed] shadow-2xl"
+            className={`w-full max-w-2xl overflow-hidden border shadow-2xl ${
+              isDusk
+                ? "border-white/10 bg-[#1a1614] backdrop-blur-md"
+                : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
+            }`}
           >
             <div
               className="border-l-[3px] px-6 py-5"
@@ -421,11 +445,11 @@ export default function AdminModerationPage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#a9793d]">
                 Review Report
               </p>
-              <h2 className="mt-2 text-2xl font-medium text-stone-900">
+              <h2 className="mt-2 text-2xl font-medium text-[var(--sh-text-primary)]">
                 {REASON_LABEL[activeFlag.reason]}
               </h2>
               {activeFlag.target_user_id && (
-                <p className="mt-1 text-sm text-stone-600">
+                <p className="mt-1 text-sm text-[var(--sh-text-secondary)]">
                   Target: <strong>{activeFlag.target_name ?? "—"}</strong>
                   {" · "}
                   Active warnings:{" "}
@@ -441,27 +465,37 @@ export default function AdminModerationPage() {
 
             <div className="space-y-5 px-6 pb-6 pt-3">
               {activeFlag.notes && (
-                <div className="border border-stone-200 bg-white px-4 py-3">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
+                <div
+                  className={`border px-4 py-3 ${
+                    isDusk
+                      ? "border-white/10 bg-white/[0.03]"
+                      : "border-[var(--sh-border-subtle)] bg-white"
+                  }`}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
                     Reporter note
                   </p>
-                  <p className="mt-1 text-sm leading-relaxed text-stone-700">
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
                     {activeFlag.notes}
                   </p>
                 </div>
               )}
 
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                   Warning Message (visible to member)
                 </p>
                 <textarea
                   value={warningMessage}
                   onChange={(e) => setWarningMessage(e.target.value)}
                   rows={4}
-                  className="mt-2 w-full border border-stone-300 bg-white px-3 py-2 text-sm leading-relaxed text-stone-800 focus:border-[#a9793d] focus:outline-none"
+                  className={`mt-2 w-full border px-3 py-2 text-sm leading-relaxed focus:border-[var(--sh-accent-gold)] focus:outline-none ${
+                    isDusk
+                      ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
+                      : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)]"
+                  }`}
                 />
-                <p className="mt-1 text-[11px] text-stone-500">
+                <p className="mt-1 text-[11px] text-[var(--sh-text-tertiary)]">
                   This is the message the member will see in their account.
                   Be honest, specific, and brief. Reference the relevant
                   Terms section when relevant.
@@ -469,7 +503,7 @@ export default function AdminModerationPage() {
               </div>
 
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
                   Internal Notes (admin-only)
                 </p>
                 <textarea
@@ -477,7 +511,11 @@ export default function AdminModerationPage() {
                   onChange={(e) => setResolutionNotes(e.target.value)}
                   rows={2}
                   placeholder="Context for future admins reviewing this account."
-                  className="mt-2 w-full border border-stone-300 bg-white px-3 py-2 text-sm leading-relaxed text-stone-800 focus:border-[#a9793d] focus:outline-none"
+                  className={`mt-2 w-full border px-3 py-2 text-sm leading-relaxed focus:border-[var(--sh-accent-gold)] focus:outline-none ${
+                    isDusk
+                      ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-stone-500"
+                      : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)]"
+                  }`}
                 />
               </div>
 
@@ -485,7 +523,11 @@ export default function AdminModerationPage() {
                 <button
                   onClick={dismissFlag}
                   disabled={working}
-                  className="border border-stone-300 bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.22em] text-stone-700 transition hover:border-[#a9793d] disabled:opacity-50"
+                  className={`border px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)] transition hover:border-[var(--sh-accent-gold)] disabled:opacity-50 ${
+                    isDusk
+                      ? "border-white/15 bg-black/40"
+                      : "border-[var(--sh-border-medium)] bg-white"
+                  }`}
                 >
                   Dismiss
                 </button>
@@ -499,14 +541,16 @@ export default function AdminModerationPage() {
                 <button
                   onClick={suspendNow}
                   disabled={working || !activeFlag.target_user_id}
-                  className="border border-[#b14a3a] bg-white px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#b14a3a] transition hover:bg-[#b14a3a] hover:text-white disabled:opacity-50"
+                  className={`border border-[#b14a3a] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.22em] text-[#b14a3a] transition hover:bg-[#b14a3a] hover:text-white disabled:opacity-50 ${
+                    isDusk ? "bg-black/40" : "bg-white"
+                  }`}
                 >
                   Suspend Now
                 </button>
                 <button
                   onClick={closeFlag}
                   disabled={working}
-                  className="ml-auto text-[11px] uppercase tracking-[0.22em] text-stone-500 transition hover:text-[#a9793d] disabled:opacity-50"
+                  className="ml-auto text-[11px] uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d] disabled:opacity-50"
                 >
                   Close
                 </button>

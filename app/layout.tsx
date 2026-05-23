@@ -5,6 +5,7 @@ import { sans } from "@/lib/fonts";
 import { ServiceWorkerRegistrar } from "@/app/components/serviceWorkerRegistrar";
 import { MobileTabBar } from "@/app/components/mobileTabBar";
 import { AnchorWatermark } from "@/app/components/anchorWatermark";
+import { PreviewDayBadge } from "@/app/components/previewDayBadge";
 import { ThemeProvider, type Theme } from "@/app/components/themeProvider";
 
 /**
@@ -159,6 +160,10 @@ export default async function RootLayout({
           <AnchorWatermark />
           <MobileTabBar />
           <ServiceWorkerRegistrar />
+          {/* Preview-day override badge — only renders when an
+              override is active (URL ?previewDay=N or persisted via
+              localStorage). Invisible for normal members. */}
+          <PreviewDayBadge />
         </ThemeProvider>
       </body>
     </html>
