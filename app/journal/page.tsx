@@ -8,8 +8,18 @@ import {
   type ComponentType,
 } from "react";
 import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { trackMilestone } from "@/lib/memberUsage";
+import {
+  deriveTitleFromPrompt,
+  fetchInvitationById,
+  fetchPromptById,
+  markInvitationAnswered,
+  type MemberStoryInvitation,
+  type StoryPrompt,
+  type StoryTelemetry,
+} from "@/lib/story";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
 import {
@@ -242,6 +252,36 @@ export default function JournalPage() {
   const [content, setContent] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // === Story Series context ===
+  // Set when /journal is opened via ?invitation_id=X from the dashboard
+  // story card. The composer renders the prompt as a quoted header,
+  // hides the title input + generic mood picker, swaps in a reflection-
+  // mood picker, and on save marks the invitation answered with the
+  // engagement telemetry captured during writing.
+  const searchParams = useSearchParams();
+  const invitationIdParam = searchParams.get("invitation_id");
+  const [storyInvitation, setStoryInvitation] =
+    useState<MemberStoryInvitation | null>(null);
+  const [storyPrompt, setStoryPrompt] = useState<StoryPrompt | null>(null);
+  // The "how does this memory sit with you?" picker is separate from
+  // the generic journal mood. It only renders during a Story flow and
+  // is persisted into telemetry.reflection_mood + mirrored to
+  // journal_entries.mood so the entries list displays the choice.
+  // Optional — null means the man chose not to answer.
+  const [reflectionMood, setReflectionMood] = useState<
+    NonNullable<StoryTelemetry["reflection_mood"]> | null
+  >(null);
+
+  // Telemetry refs: tracked imperatively (no re-renders) and snapshotted
+  // into a StoryTelemetry object on save.
+  const shownAtRef = useRef<number | null>(null);
+  const firstKeystrokeAtRef = useRef<number | null>(null);
+  const lastKeystrokeAtRef = useRef<number | null>(null);
+  const activeMsRef = useRef<number>(0);
+  const pausesRef = useRef<number>(0);
+  const deletesRef = useRef<number>(0);
+  const prevLenRef = useRef<number>(0);
+
   // Unsaved-changes guard for the journal composer. Dirty whenever
   // the textarea or title contains content that hasn't been saved.
   // Cleared automatically after saveEntry resets content + title to "".
@@ -284,6 +324,35 @@ export default function JournalPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);
+
+  // Story Series — when invitation_id is in the query string, fetch
+  // the invitation + prompt. RLS guarantees we only see the member's
+  // own invitations, so if it returns null the param is bogus and we
+  // silently fall back to the standard composer.
+  useEffect(() => {
+    if (!invitationIdParam) {
+      setStoryInvitation(null);
+      setStoryPrompt(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const inv = await fetchInvitationById(supabase, invitationIdParam);
+        if (cancelled || !inv) return;
+        const prompt = await fetchPromptById(supabase, inv.prompt_id);
+        if (cancelled || !prompt) return;
+        setStoryInvitation(inv);
+        setStoryPrompt(prompt);
+        shownAtRef.current = Date.now();
+      } catch (err) {
+        console.warn("[journal] story invitation fetch failed:", err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [invitationIdParam]);
 
   async function toggleSound() {
     const audio = audioRef.current;
@@ -362,15 +431,25 @@ export default function JournalPage() {
     // window, these preserve the in-the-moment voice for tone signal
     // and historical truth. Null titles stay null in both columns.
     const trimmedContent = content.trim();
-    const trimmedTitle = title.trim() || null;
+    // For Story Series entries, the prompt IS the title. For mood we
+    // take a "both-and" approach: when the man picks a Reflection Mood,
+    // that selection drives both journal_entries.mood (so the entries
+    // list shows the right color/icon) AND telemetry.reflection_mood
+    // (the canonical signal Eidos reads — separate from generic daily
+    // mood). When he doesn't pick, mood defaults to 'grounded'.
+    const trimmedTitle = storyPrompt
+      ? deriveTitleFromPrompt(storyPrompt.prompt_text)
+      : title.trim() || null;
+    const effectiveMood = storyPrompt ? (reflectionMood ?? "grounded") : mood;
+    const effectiveMoodSpecific = storyPrompt ? null : moodSpecific;
     const { data: inserted, error } = await supabase
       .from("journal_entries")
       .insert({
         user_id: userId,
         title: trimmedTitle,
         original_title: trimmedTitle,
-        mood,
-        mood_specific: moodSpecific,
+        mood: effectiveMood,
+        mood_specific: effectiveMoodSpecific,
         content: trimmedContent,
         original_content: trimmedContent,
       })
@@ -382,6 +461,55 @@ export default function JournalPage() {
       trackMilestone("first_journal_entry");
       // If they used a sub-mood chip, that's its own milestone.
       if (moodSpecific) trackMilestone("first_sub_mood");
+
+      // Story Series — if this entry answers an invitation, mark it
+      // answered, link the new journal entry, and persist the
+      // engagement telemetry captured during writing. Failures here
+      // don't block the journal flow; the entry is the canonical
+      // artifact and is already saved.
+      if (storyInvitation) {
+        try {
+          const telemetry: StoryTelemetry = {
+            time_to_first_keystroke_ms:
+              shownAtRef.current && firstKeystrokeAtRef.current
+                ? Math.max(
+                    0,
+                    firstKeystrokeAtRef.current - shownAtRef.current,
+                  )
+                : undefined,
+            total_writing_seconds: Math.round(activeMsRef.current / 1000),
+            pauses_count: pausesRef.current,
+            deletes_count: deletesRef.current,
+            word_count: trimmedContent.split(/\s+/).filter(Boolean).length,
+            reflection_mood: reflectionMood,
+          };
+          await markInvitationAnswered(
+            supabase,
+            storyInvitation.id,
+            inserted.id,
+            telemetry,
+          );
+          setStoryInvitation(null);
+          setStoryPrompt(null);
+          setReflectionMood(null);
+          shownAtRef.current = null;
+          firstKeystrokeAtRef.current = null;
+          lastKeystrokeAtRef.current = null;
+          activeMsRef.current = 0;
+          pausesRef.current = 0;
+          deletesRef.current = 0;
+          prevLenRef.current = 0;
+          // Remove the now-stale ?invitation_id= from the URL without
+          // triggering a route transition (which would conflict with
+          // the unsaved-changes guard while content is still in state
+          // this tick). pure history API — no re-render, no nav event.
+          if (typeof window !== "undefined") {
+            window.history.replaceState(null, "", "/journal");
+          }
+        } catch (err) {
+          console.warn("[journal] markInvitationAnswered failed:", err);
+        }
+      }
 
       // If the man did a body check before writing, link it to this
       // entry. Body checks are best-effort — a write failure here
@@ -730,16 +858,56 @@ export default function JournalPage() {
             )}
 
             <form onSubmit={saveEntry} className="mt-10">
-              <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
-                Title
-              </label>
-              <VentInput
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="mb-6"
-                placeholder="Optional title"
-              />
+              {/* STORY PROMPT HEADER — only when /journal was opened
+                  via a Story invitation. Renders the prompt as the
+                  title (non-editable). The man's response IS his
+                  answer to this question; a man-written title would
+                  just duplicate the prompt. The reflection-mood
+                  picker below replaces the generic mood for this
+                  surface. */}
+              {storyPrompt ? (
+                <div
+                  className={`mb-8 border-l-2 px-4 py-4 md:mb-10 md:px-5 md:py-5 ${
+                    isDusk
+                      ? "border-[#c4934e] bg-black/20"
+                      : "border-[#a9793d] bg-[#f6f0e6]"
+                  }`}
+                >
+                  <p
+                    className={`mb-2 text-[10px] font-bold uppercase tracking-[0.28em] ${
+                      isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
+                    }`}
+                  >
+                    A story to tell
+                  </p>
+                  <p
+                    className={`${serif.className} text-lg italic leading-snug md:text-xl ${
+                      isDusk ? "text-stone-100" : "text-stone-900"
+                    }`}
+                  >
+                    &ldquo;{storyPrompt.prompt_text}&rdquo;
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
+                    Title
+                  </label>
+                  <VentInput
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="mb-6"
+                    placeholder="Optional title"
+                  />
+                </>
+              )}
 
+              {/* MOOD PICKER — only on plain reflections. Story responses
+                  are about memory, not present-tense feeling; the
+                  reflection-mood picker below the textarea handles that
+                  question separately. */}
+              {!storyPrompt && (
+                <>
               <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
                 Mood
               </label>
@@ -808,6 +976,8 @@ export default function JournalPage() {
                   onChange={setMoodSpecific}
                 />
               )}
+                </>
+              )}
 
               <div className="mb-2 flex items-baseline justify-between gap-3">
                 <label className="block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
@@ -839,10 +1009,35 @@ export default function JournalPage() {
               <VentTextarea
                 required
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  // Telemetry — only meaningful when a Story prompt is active.
+                  if (storyInvitation) {
+                    const now = Date.now();
+                    if (
+                      firstKeystrokeAtRef.current === null &&
+                      next.length > 0
+                    ) {
+                      firstKeystrokeAtRef.current = now;
+                    }
+                    if (lastKeystrokeAtRef.current !== null) {
+                      const gap = now - lastKeystrokeAtRef.current;
+                      if (gap < 30_000) activeMsRef.current += gap;
+                      if (gap >= 5_000) pausesRef.current += 1;
+                    }
+                    lastKeystrokeAtRef.current = now;
+                    if (prevLenRef.current - next.length >= 10) {
+                      deletesRef.current += 1;
+                    }
+                    prevLenRef.current = next.length;
+                  }
+                  setContent(next);
+                }}
                 rows={9}
                 className="mb-2"
-                placeholder="What do you need to say today?"
+                placeholder={
+                  storyPrompt ? "Tell me…" : "What do you need to say today?"
+                }
               />
               {/* "Start with one word" — appears only when the textarea
                   has been empty for 12s. The 5-second-rule pattern, in
@@ -864,6 +1059,82 @@ export default function JournalPage() {
                 </span>
                 <span className="italic">No one reads this but you.</span>
               </div>
+
+              {/* REFLECTION MOOD — only on Story responses. Optional.
+                  Distinct from the generic daily mood: this captures how
+                  the memory itself sits with the man, AFTER writing.
+                  Mirrors to journal_entries.mood so the entries list
+                  displays it, AND persists to telemetry.reflection_mood
+                  as the canonical Eidos signal. */}
+              {storyPrompt && (
+                <div className="mb-8">
+                  <label
+                    className={`mb-3 block text-xs italic ${
+                      isDusk ? "text-stone-400" : "text-stone-600"
+                    }`}
+                  >
+                    How does this memory sit with you?
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {moodOptions.map((option) => {
+                      const active = reflectionMood === option.value;
+                      const Icon = moodIcons[option.value];
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() =>
+                            setReflectionMood(
+                              active
+                                ? null
+                                : (option.value as NonNullable<
+                                    StoryTelemetry["reflection_mood"]
+                                  >),
+                            )
+                          }
+                          className="flex items-center gap-2 border px-4 py-2.5 text-xs font-bold uppercase tracking-[0.22em] transition"
+                          style={{
+                            borderColor: active
+                              ? option.color
+                              : isDusk
+                                ? "rgba(255,255,255,0.15)"
+                                : "#d6d3d1",
+                            color: active
+                              ? option.color
+                              : isDusk
+                                ? "rgba(255,255,255,0.7)"
+                                : "#57534e",
+                            backgroundColor: active
+                              ? isDusk
+                                ? "rgba(255,255,255,0.08)"
+                                : "#ffffff"
+                              : isDusk
+                                ? "rgba(255,255,255,0.03)"
+                                : "#f8f4ed",
+                            boxShadow: active
+                              ? `inset 0 0 0 1px ${option.color}`
+                              : undefined,
+                          }}
+                        >
+                          <Icon
+                            size={14}
+                            strokeWidth={1.5}
+                            style={{ color: option.color }}
+                          />
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p
+                    className={`mt-2 text-[10px] italic ${
+                      isDusk ? "text-stone-500" : "text-stone-500"
+                    }`}
+                  >
+                    Optional. Skip if nothing fits.
+                  </p>
+                </div>
+              )}
 
               <button
                 type="submit"

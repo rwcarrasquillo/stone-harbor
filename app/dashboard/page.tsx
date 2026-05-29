@@ -44,6 +44,7 @@ import {
 import { useTheme } from "@/app/components/themeProvider";
 import { PersonalizedGreeting } from "@/app/components/personalizedGreeting";
 import { TodayIntention } from "@/app/components/todayIntention";
+import { StoryInvitationCard } from "@/app/components/storyInvitationCard";
 import { BreathCircle } from "@/app/components/breathCircle";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
@@ -1084,6 +1085,18 @@ export default function DashboardPage() {
               ))}
             </motion.section>
           </AnimatePresence>
+        )}
+
+        {/* STORY INVITATION — Dad Series MVP card.
+            Founder-gated for the first cycle (M1 in the Milestone
+            Roadmap). The card surfaces one prompt at a time from the
+            36-prompt pool, capped at depth L1/L2 in the MVP. It
+            renders only when (1) the member is the founder and (2)
+            the surfacer returns a candidate. Otherwise it self-hides
+            and the page continues to Today's Reflection below.
+            See lib/story/ for the surfacer + types. */}
+        {userId && (
+          <StoryInvitationCard userId={userId} userEmail={profile?.email ?? null} />
         )}
 
         {/* DAILY REFLECTION — moved above the greeting strip per the
