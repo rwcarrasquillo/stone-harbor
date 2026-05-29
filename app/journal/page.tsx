@@ -54,6 +54,10 @@ import {
   resolveLineageReferences,
   type LineageContent,
 } from "@/lib/lineageMatcher";
+import {
+  JOURNAL_EDIT_WINDOW_MS,
+  isWithinEditWindow,
+} from "@/lib/journalEditWindow";
 
 // Brand system — matches home + dashboard
 const GOLD = "#c4934e";
@@ -119,10 +123,28 @@ function timeGreeting() {
 type JournalEntry = {
   id: string;
   title: string | null;
+  // original_title is the immutable first-save title (or null if the
+  // entry was originally untitled). Never updated server-side after
+  // row creation. Mirrors the original_content preservation pattern.
+  original_title: string | null;
   content: string;
+  // original_content is the immutable first-save text. Equal to content
+  // until the member edits within the 6-hour window. Never updated
+  // server-side after row creation.
+  original_content: string;
   mood: string | null;
   created_at: string;
+  // edited_at is null until the member edits an entry. Once edited,
+  // it stores the timestamp of the most recent edit. Existence of a
+  // value drives the "· edited" UI indicator. Set whenever title OR
+  // content changes — they edit together as a unit.
+  edited_at: string | null;
 };
+
+// JOURNAL_EDIT_WINDOW_MS and isWithinEditWindow live in
+// lib/journalEditWindow.ts (imported above) so the same policy is
+// shared between the page UI and the vitest unit tests without
+// pulling the entire client component into the test environment.
 
 type SortOption = "newest" | "oldest" | "mood" | "title";
 
@@ -199,6 +221,16 @@ export default function JournalPage() {
   // SubMoods chip row; resets whenever the parent mood changes since
   // a sub-mood like "resentful" doesn't carry across to "hopeful."
   const [moodSpecific, setMoodSpecific] = useState<string | null>(null);
+  // Edit-mode state for the 6-hour edit window. editingEntryId points
+  // at the entry currently being refined; editingDraft holds the in-
+  // progress body text; editingDraftTitle holds the in-progress title.
+  // Only one entry is editable at a time — opening edit on a second
+  // entry cancels the first. Title and content edit together as a
+  // single unit (one Save Edit click commits both).
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState("");
+  const [editingDraftTitle, setEditingDraftTitle] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   // When the textarea has been empty AND focused for >12 seconds, we
   // surface a gentle one-line nudge underneath: "Start with one word."
   // This is the 5-second-rule pattern translated to the harbor's voice
@@ -233,21 +265,15 @@ export default function JournalPage() {
   const [storyPrompt, setStoryPrompt] = useState<StoryPrompt | null>(null);
   // The "how does this memory sit with you?" picker is separate from
   // the generic journal mood. It only renders during a Story flow and
-  // is persisted into telemetry.reflection_mood. Optional — null means
-  // the man chose not to answer.
+  // is persisted into telemetry.reflection_mood + mirrored to
+  // journal_entries.mood so the entries list displays the choice.
+  // Optional — null means the man chose not to answer.
   const [reflectionMood, setReflectionMood] = useState<
     NonNullable<StoryTelemetry["reflection_mood"]> | null
   >(null);
 
   // Telemetry refs: tracked imperatively (no re-renders) and snapshotted
   // into a StoryTelemetry object on save.
-  //   shownAtRef: when we first showed the prompt header
-  //   firstKeystrokeAtRef: ms timestamp of the first content character typed
-  //   lastKeystrokeAtRef: ms timestamp of the most-recent edit (for pause detection)
-  //   activeMsRef: total active writing ms (gaps > 30s are excluded)
-  //   pausesRef: count of gaps ≥ 5s
-  //   deletesRef: count of large deletions (≥ 10 chars in one event)
-  //   prevLenRef: tracks previous content length to detect deletes
   const shownAtRef = useRef<number | null>(null);
   const firstKeystrokeAtRef = useRef<number | null>(null);
   const lastKeystrokeAtRef = useRef<number | null>(null);
@@ -318,8 +344,6 @@ export default function JournalPage() {
         if (cancelled || !prompt) return;
         setStoryInvitation(inv);
         setStoryPrompt(prompt);
-        // Anchor telemetry — the prompt is now "shown" from the
-        // member's perspective.
         shownAtRef.current = Date.now();
       } catch (err) {
         console.warn("[journal] story invitation fetch failed:", err);
@@ -381,7 +405,9 @@ export default function JournalPage() {
     });
     const { data, error } = await supabase
       .from("journal_entries")
-      .select("id, title, content, mood, created_at")
+      .select(
+        "id, title, original_title, content, original_content, mood, created_at, edited_at",
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (!error && data) {
@@ -395,35 +421,33 @@ export default function JournalPage() {
     if (!userId || !content.trim()) return;
     setSaving(true);
 
+    // Insert the journal entry and ask for its id back so we can
+    // optionally link a body_check row to it. mood_specific is null
+    // unless the man explicitly picked a sub-mood — the database
+    // column allows null and the mood map handles either case.
+    //
+    // original_content and original_title are set on first save and
+    // never touched again. Even if the member edits within the 6-hour
+    // window, these preserve the in-the-moment voice for tone signal
+    // and historical truth. Null titles stay null in both columns.
+    const trimmedContent = content.trim();
     // For Story Series entries, the prompt IS the title. For mood we
-    // take a "both-and" approach: when the man picks a Reflection Mood
-    // ("how does this memory sit with you?"), that selection drives
-    // both journal_entries.mood (so the entries list shows the right
-    // color/icon) AND telemetry.reflection_mood (the canonical signal
-    // Eidos reads — separate from generic daily mood). When he doesn't
-    // pick, mood defaults to 'grounded' as a quiet baseline so the
-    // mood-map view stays continuous.
-    const effectiveTitle = storyPrompt
+    // take a "both-and" approach: when the man picks a Reflection Mood,
+    // that selection drives both journal_entries.mood (so the entries
+    // list shows the right color/icon) AND telemetry.reflection_mood
+    // (the canonical signal Eidos reads — separate from generic daily
+    // mood). When he doesn't pick, mood defaults to 'grounded'.
+    const trimmedTitle = storyPrompt
       ? deriveTitleFromPrompt(storyPrompt.prompt_text)
       : title.trim() || null;
-    const effectiveMood = storyPrompt
-      ? (reflectionMood ?? "grounded")
-      : mood;
+    const effectiveMood = storyPrompt ? (reflectionMood ?? "grounded") : mood;
     const effectiveMoodSpecific = storyPrompt ? null : moodSpecific;
-    const trimmedContent = content.trim();
-
-    // Insert the journal entry. original_content + original_title
-    // mirror content/title at creation time — the editable-entries
-    // feature uses them to surface the pre-edit version inside the
-    // 6h edit window. They're NOT NULL in the schema; populating
-    // them here is what unblocks every fresh save (regression fix
-    // from #223).
     const { data: inserted, error } = await supabase
       .from("journal_entries")
       .insert({
         user_id: userId,
-        title: effectiveTitle,
-        original_title: effectiveTitle,
+        title: trimmedTitle,
+        original_title: trimmedTitle,
         mood: effectiveMood,
         mood_specific: effectiveMoodSpecific,
         content: trimmedContent,
@@ -456,9 +480,7 @@ export default function JournalPage() {
             total_writing_seconds: Math.round(activeMsRef.current / 1000),
             pauses_count: pausesRef.current,
             deletes_count: deletesRef.current,
-            word_count: trimmedContent
-              .split(/\s+/)
-              .filter(Boolean).length,
+            word_count: trimmedContent.split(/\s+/).filter(Boolean).length,
             reflection_mood: reflectionMood,
           };
           await markInvitationAnswered(
@@ -467,13 +489,6 @@ export default function JournalPage() {
             inserted.id,
             telemetry,
           );
-          // Clear local Story state and the telemetry refs. The URL's
-          // ?invitation_id=… is left as-is here; we DON'T router.replace
-          // mid-save because that races the dirty-content unsaved-changes
-          // guard and the state setters below. Instead, after this save
-          // the storyInvitation fetch effect re-runs against the cleared
-          // state, sees no invitation, and the composer falls back to
-          // its plain form. Clean enough for MVP.
           setStoryInvitation(null);
           setStoryPrompt(null);
           setReflectionMood(null);
@@ -535,6 +550,73 @@ export default function JournalPage() {
     const confirmed = window.confirm("Delete this journal entry?");
     if (!confirmed) return;
     await supabase.from("journal_entries").delete().eq("id", id);
+    await loadJournal();
+  }
+
+  /**
+   * Open edit mode for an entry. The entry must still be within
+   * its 6-hour edit window — the UI shouldn't render the affordance
+   * outside the window, but we defensively re-check here too.
+   */
+  function beginEditingEntry(entry: JournalEntry) {
+    if (!isWithinEditWindow(entry.created_at)) return;
+    setEditingEntryId(entry.id);
+    setEditingDraft(entry.content);
+    setEditingDraftTitle(entry.title ?? "");
+  }
+
+  /** Discard the in-progress edit and return to the read view. */
+  function cancelEditingEntry() {
+    setEditingEntryId(null);
+    setEditingDraft("");
+    setEditingDraftTitle("");
+  }
+
+  /**
+   * Save an edit to an existing entry. Mutates only `title`,
+   * `content`, and `edited_at`; `original_title` and
+   * `original_content` are never touched. The 6-hour window is
+   * enforced here so a stale UI cannot bypass it (e.g., if the page
+   * was left open past the window).
+   */
+  async function saveEditingEntry(entry: JournalEntry) {
+    if (savingEdit) return;
+    const trimmedContent = editingDraft.trim();
+    if (!trimmedContent) {
+      window.alert(
+        "Entry body can't be empty. Cancel instead to leave as-is.",
+      );
+      return;
+    }
+    if (!isWithinEditWindow(entry.created_at)) {
+      window.alert(
+        "The edit window for this entry has closed. The original is preserved.",
+      );
+      cancelEditingEntry();
+      await loadJournal();
+      return;
+    }
+    // Title is allowed to be empty — that's the "untitled" state.
+    // Trim and convert empty string to null so the DB column reflects
+    // the untitled state consistently with how new entries are saved.
+    const trimmedTitle = editingDraftTitle.trim() || null;
+    setSavingEdit(true);
+    const { error } = await supabase
+      .from("journal_entries")
+      .update({
+        title: trimmedTitle,
+        content: trimmedContent,
+        edited_at: new Date().toISOString(),
+      })
+      .eq("id", entry.id);
+    setSavingEdit(false);
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.error("[journal] saveEditingEntry failed:", error);
+      window.alert("Couldn't save the edit. Try again in a moment.");
+      return;
+    }
+    cancelEditingEntry();
     await loadJournal();
   }
 
@@ -778,11 +860,11 @@ export default function JournalPage() {
             <form onSubmit={saveEntry} className="mt-10">
               {/* STORY PROMPT HEADER — only when /journal was opened
                   via a Story invitation. Renders the prompt as the
-                  title (non-editable) and skips the generic mood
-                  picker. The man's response IS his answer to this
-                  question; a man-written title would just duplicate
-                  the prompt. The reflection-mood picker below replaces
-                  the generic mood for this surface. */}
+                  title (non-editable). The man's response IS his
+                  answer to this question; a man-written title would
+                  just duplicate the prompt. The reflection-mood
+                  picker below replaces the generic mood for this
+                  surface. */}
               {storyPrompt ? (
                 <div
                   className={`mb-8 border-l-2 px-4 py-4 md:mb-10 md:px-5 md:py-5 ${
@@ -821,15 +903,15 @@ export default function JournalPage() {
               )}
 
               {/* MOOD PICKER — only on plain reflections. Story responses
-                  are about memory, not present-tense feeling; we silently
-                  default mood='grounded' in the row and surface the
-                  reflection-mood picker below the textarea instead. */}
+                  are about memory, not present-tense feeling; the
+                  reflection-mood picker below the textarea handles that
+                  question separately. */}
               {!storyPrompt && (
                 <>
-                  <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
-                    Mood
-                  </label>
-                  <div className="mb-6 flex flex-wrap gap-2">
+              <label className="mb-3 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-secondary)]">
+                Mood
+              </label>
+              <div className="mb-6 flex flex-wrap gap-2">
                 {moodOptions.map((option) => {
                   const active = mood === option.value;
                   const Icon = moodIcons[option.value];
@@ -932,19 +1014,18 @@ export default function JournalPage() {
                   // Telemetry — only meaningful when a Story prompt is active.
                   if (storyInvitation) {
                     const now = Date.now();
-                    if (firstKeystrokeAtRef.current === null && next.length > 0) {
+                    if (
+                      firstKeystrokeAtRef.current === null &&
+                      next.length > 0
+                    ) {
                       firstKeystrokeAtRef.current = now;
                     }
-                    // Active writing time: count the gap since the last
-                    // keystroke if it was < 30s. Pauses ≥ 5s also bump
-                    // pausesRef.
                     if (lastKeystrokeAtRef.current !== null) {
                       const gap = now - lastKeystrokeAtRef.current;
                       if (gap < 30_000) activeMsRef.current += gap;
                       if (gap >= 5_000) pausesRef.current += 1;
                     }
                     lastKeystrokeAtRef.current = now;
-                    // Delete detection: prev length dropped by ≥ 10 chars.
                     if (prevLenRef.current - next.length >= 10) {
                       deletesRef.current += 1;
                     }
@@ -955,9 +1036,7 @@ export default function JournalPage() {
                 rows={9}
                 className="mb-2"
                 placeholder={
-                  storyPrompt
-                    ? "Tell me…"
-                    : "What do you need to say today?"
+                  storyPrompt ? "Tell me…" : "What do you need to say today?"
                 }
               />
               {/* "Start with one word" — appears only when the textarea
@@ -984,8 +1063,9 @@ export default function JournalPage() {
               {/* REFLECTION MOOD — only on Story responses. Optional.
                   Distinct from the generic daily mood: this captures how
                   the memory itself sits with the man, AFTER writing.
-                  Persisted to member_story_invitations.telemetry.reflection_mood,
-                  never to journal_entries.mood (which stays grounded). */}
+                  Mirrors to journal_entries.mood so the entries list
+                  displays it, AND persists to telemetry.reflection_mood
+                  as the canonical Eidos signal. */}
               {storyPrompt && (
                 <div className="mb-8">
                   <label
@@ -1211,20 +1291,102 @@ export default function JournalPage() {
                           >
                             {entry.title || "Untitled Entry"}
                           </h2>
-                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-muted)]">
-                            {formatEntryDateTime(entry.created_at)}
-                          </p>
+                          {(() => {
+                            // Capture edited_at in a const so TypeScript's
+                            // null narrowing survives the JSX boundary. The
+                            // previous inline `{entry.edited_at && ...}`
+                            // pattern works at dev-time but the production
+                            // build (stricter type-check) sometimes loses
+                            // the narrowing inside the JSX expression.
+                            const editedAt = entry.edited_at;
+                            return (
+                              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--sh-text-muted)]">
+                                {formatEntryDateTime(entry.created_at)}
+                                {editedAt && (
+                                  <span className="ml-2 text-[10px] font-normal italic normal-case tracking-normal text-[var(--sh-text-muted)]">
+                                    · edited {formatEntryDateTime(editedAt)}
+                                  </span>
+                                )}
+                              </p>
+                            );
+                          })()}
                         </div>
-                        <button
-                          onClick={() => deleteEntry(entry.id)}
-                          className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600"
-                        >
-                          Delete
-                        </button>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          {/* Edit affordance — only rendered while the
+                              6-hour window is open. After the window
+                              expires, the button disappears entirely
+                              and the entry locks in its current
+                              (edited or original) state. */}
+                          {isWithinEditWindow(entry.created_at) &&
+                            editingEntryId !== entry.id && (
+                              <button
+                                onClick={() => beginEditingEntry(entry)}
+                                className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-[var(--sh-accent-gold)] hover:text-[var(--sh-accent-gold)]"
+                              >
+                                Edit
+                              </button>
+                            )}
+                          <button
+                            onClick={() => deleteEntry(entry.id)}
+                            className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-red-300 hover:text-red-600"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                      <p className="whitespace-pre-wrap leading-relaxed text-[var(--sh-text-secondary)]">
-                        {entry.content}
-                      </p>
+
+                      {editingEntryId === entry.id ? (
+                        <div className="space-y-3">
+                          <input
+                            type="text"
+                            value={editingDraftTitle}
+                            onChange={(e) =>
+                              setEditingDraftTitle(e.target.value)
+                            }
+                            className={`w-full rounded-none border px-4 py-2 text-sm outline-none transition focus:ring-2 focus:ring-[#586558]/30 ${
+                              isDusk
+                                ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
+                                : "border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
+                            }`}
+                            placeholder="Title (optional)"
+                            autoFocus
+                          />
+                          <textarea
+                            value={editingDraft}
+                            onChange={(e) => setEditingDraft(e.target.value)}
+                            rows={Math.max(4, Math.min(12, editingDraft.split("\n").length + 1))}
+                            className={`w-full resize-none rounded-none border px-4 py-3 text-sm outline-none transition focus:ring-2 focus:ring-[#586558]/30 ${
+                              isDusk
+                                ? "border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
+                                : "border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
+                            }`}
+                            placeholder="Refine what you wrote…"
+                          />
+                          <p className="text-xs italic text-[var(--sh-text-muted)]">
+                            Your first words (title and body) are preserved. This refines only the rendered version.
+                          </p>
+                          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                            <button
+                              onClick={cancelEditingEntry}
+                              disabled={savingEdit}
+                              className="rounded-none border border-[var(--sh-border-medium)] px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--sh-text-tertiary)] transition hover:border-[var(--sh-text-secondary)] hover:text-[var(--sh-text-primary)] disabled:opacity-60"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => saveEditingEntry(entry)}
+                              disabled={savingEdit || !editingDraft.trim()}
+                              className="rounded-none border border-[var(--sh-accent-gold)] bg-[#a9793d] px-5 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:bg-[#8d6432] disabled:opacity-60"
+                            >
+                              {savingEdit ? "Saving…" : "Save Edit"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap leading-relaxed text-[var(--sh-text-secondary)]">
+                          {entry.content}
+                        </p>
+                      )}
                     </article>
                   );
                 })}
