@@ -129,6 +129,30 @@ export const viewport: Viewport = {
 };
 
 /**
+ * Force every route through this root layout to be rendered
+ * dynamically rather than statically pre-generated at build time.
+ *
+ * Without this, Next.js can pre-render pages like /dashboard with
+ * the default English locale baked into the HTML, and Vercel's edge
+ * cache serves that HTML to ALL requests regardless of the user's
+ * NEXT_LOCALE cookie. The picker indicator updates after hydration
+ * (it reads via useLocale() which goes through NextIntlClientProvider
+ * with the cookie value) but the SURROUNDING HTML stays English
+ * until a hard reload forces a fresh render.
+ *
+ * Symptom reported 2026-05-31: fresh incognito visit showed picker
+ * indicator on Español but page chrome in English; manual round-trip
+ * EN → ES fixed it. Root cause: edge-cached static HTML.
+ *
+ * Authenticated pages already read user data per-request via Supabase
+ * RLS, so static pre-generation wasn't buying us anything anyway.
+ * Marketing/public pages (/, /en, /es) are still cheap to render on
+ * demand and benefit from the same dynamic behavior for the locale
+ * resolution, so the broad opt-in is the simpler correct move.
+ */
+export const dynamic = "force-dynamic";
+
+/**
  * Read the member's saved theme from a same-origin cookie at request
  * time. The cookie is written client-side by ThemeProvider.setTheme;
  * having the server read it means the data-theme attribute on <html>
