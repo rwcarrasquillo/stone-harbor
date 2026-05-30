@@ -1,14 +1,17 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { PageTopNav } from "@/app/components/pageTopNav";
 import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
 import {
   Book,
+  ChevronLeft,
+  ChevronRight,
   Eye,
   Mountain,
   Wave,
@@ -474,11 +477,41 @@ export default function NewMembersBlogPage() {
   const [externals, setExternals] = useState<ExternalContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [userStage, setUserStage] = useState<Pillar>("clarity");
-  const [filter, setFilter] = useState<"yours" | "all" | Pillar>("all");
+  // Source toggle (segmented control). Replaces the earlier three-chip
+  // filter row. "all" reads "Both" in the UI.
   const [sourceMode, setSourceMode] = useState<"all" | "internal" | "external">(
     "all",
   );
   const [openId, setOpenId] = useState<string | null>(null);
+  // Which pillar's strip is expanded into a full grid view (null = all
+  // three are in horizontal-strip mode). Click "See all in [pillar]"
+  // to set, "Collapse" to clear.
+  const [expandedPillar, setExpandedPillar] = useState<Pillar | null>(null);
+  // Active card index per strip — drives the dot position indicator.
+  // Visual only; not used for navigation logic.
+  const [activeIndex, setActiveIndex] = useState<Record<Pillar, number>>({
+    clarity: 0,
+    calm: 0,
+    strength: 0,
+  });
+  // Refs to each strip's scroll container, used by the desktop arrows
+  // to scrollBy() one card-width per click. Set via the ref callback
+  // on the scroller div.
+  const stripRefs = useRef<Record<Pillar, HTMLDivElement | null>>({
+    clarity: null,
+    calm: null,
+    strength: null,
+  });
+  // Section refs so the "See all" / "Collapse" toggle can scroll the
+  // header back into view, avoiding a jarring jump when the
+  // collapsed strip and expanded grid have very different heights.
+  // Typed as HTMLElement because framer-motion's `motion.section`
+  // forwards a generic Element ref.
+  const sectionRefs = useRef<Record<Pillar, HTMLElement | null>>({
+    clarity: null,
+    calm: null,
+    strength: null,
+  });
 
   async function loadAll() {
     const {
@@ -560,19 +593,17 @@ export default function NewMembersBlogPage() {
     return combined;
   }, [posts, externals]);
 
-  // Apply source mode + pillar filter
+  // Apply source mode only. Pillar filtering happens at the strip
+  // level — every strip always renders, and the source mode just
+  // narrows what kinds of items each strip can show.
   const visibleFeed = useMemo<FeedItem[]>(() => {
     let items = allFeed;
     if (sourceMode === "internal")
       items = items.filter((it) => it.kind === "internal");
     if (sourceMode === "external")
       items = items.filter((it) => it.kind === "external");
-    if (filter === "yours")
-      items = items.filter((it) => it.pillar === userStage);
-    else if (filter !== "all")
-      items = items.filter((it) => it.pillar === filter);
     return items;
-  }, [allFeed, sourceMode, filter, userStage]);
+  }, [allFeed, sourceMode]);
 
   // FEATURED — internal-first hierarchy.
   // Look in the visible feed for the most recent internal first; if none, fall back to most recent overall.
@@ -582,47 +613,85 @@ export default function NewMembersBlogPage() {
     return firstInternal ?? visibleFeed[0];
   }, [visibleFeed]);
 
-  // PILLAR SECTIONS — group by pillar, then split into external (images) and
-  // internal (gradients). External cards group at the top of each section so
-  // image cards never sit next to gradient cards, keeping visual rhythm clean.
+  // PILLAR SECTIONS — one entry per pillar (always all three),
+  // ordered so the member's current path appears first. The strip
+  // mode reads `items` (a single mixed-source stream sorted by date).
+  // The expanded grid mode reads the `external` and `internal`
+  // splits so the two visual styles stay grouped (image cards above
+  // gradient cards, preserving the page's visual rhythm).
   const pillarSections = useMemo<
     {
       pillar: Pillar;
+      items: FeedItem[];
       external: FeedItem[];
       internal: FeedItem[];
       total: number;
     }[]
   >(() => {
-    if (!featured) return [];
-    const featuredKey = feedId(featured);
-
-    // Which pillars get rendered depends on the active filter.
-    let order: Pillar[];
-    if (filter === "yours") order = [userStage];
-    else if (filter !== "all") order = [filter];
-    else {
-      // user's stage first, then the other two
-      order = [userStage];
-      (["clarity", "calm", "strength"] as Pillar[]).forEach((p) => {
-        if (p !== userStage) order.push(p);
-      });
-    }
-
+    const featuredKey = featured ? feedId(featured) : null;
+    const order: Pillar[] = [userStage];
+    (["clarity", "calm", "strength"] as Pillar[]).forEach((p) => {
+      if (p !== userStage) order.push(p);
+    });
     return order.map((pillar) => {
-      const all = visibleFeed.filter(
+      const items = visibleFeed.filter(
         (it) => it.pillar === pillar && feedId(it) !== featuredKey,
       );
-      const external = all.filter((it) => it.kind === "external");
-      const internal = all.filter((it) => it.kind === "internal");
-      return { pillar, external, internal, total: all.length };
+      const external = items.filter((it) => it.kind === "external");
+      const internal = items.filter((it) => it.kind === "internal");
+      return { pillar, items, external, internal, total: items.length };
     });
-  }, [visibleFeed, featured, filter, userStage]);
+  }, [visibleFeed, featured, userStage]);
 
   // Find the open internal post for the reader overlay
   const openItem = useMemo<FeedItem | null>(() => {
     if (!openId) return null;
     return visibleFeed.find((it) => feedId(it) === openId) ?? null;
   }, [openId, visibleFeed]);
+
+  // Pull the per-card width (including gap) off the actual first
+  // child of the scroller. Computed every time so it survives
+  // viewport-resize rebalancing of the responsive width classes.
+  // The 16px addition matches the `gap-4` between cards.
+  function cardStrideFromContainer(el: HTMLDivElement): number {
+    const first = el.firstElementChild as HTMLElement | null;
+    if (!first) return 0;
+    return first.getBoundingClientRect().width + 16;
+  }
+
+  function handleStripScroll(pillar: Pillar) {
+    return (e: React.UIEvent<HTMLDivElement>) => {
+      const el = e.currentTarget;
+      const stride = cardStrideFromContainer(el);
+      if (!stride) return;
+      const idx = Math.round(el.scrollLeft / stride);
+      setActiveIndex((s) => (s[pillar] === idx ? s : { ...s, [pillar]: idx }));
+    };
+  }
+
+  function scrollStrip(pillar: Pillar, direction: "left" | "right") {
+    const el = stripRefs.current[pillar];
+    if (!el) return;
+    const stride = cardStrideFromContainer(el);
+    if (!stride) return;
+    el.scrollBy({
+      left: direction === "left" ? -stride : stride,
+      behavior: "smooth",
+    });
+  }
+
+  function togglePillar(pillar: Pillar) {
+    setExpandedPillar((current) => (current === pillar ? null : pillar));
+    // Smoothly bring the pillar header into view on the next frame —
+    // the layout has just changed height, so we wait for the paint
+    // before measuring.
+    requestAnimationFrame(() => {
+      const sectionEl = sectionRefs.current[pillar];
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  }
 
   if (loading) {
     return (
@@ -659,28 +728,10 @@ export default function NewMembersBlogPage() {
       {/* Unified harbor ambience — same on every authenticated page */}
       <PageAmbience />
 
-      <section className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 pb-12 pt-8 md:px-8">
-        {/* TOP NAV */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href="/dashboard"
-            className="group flex flex-col leading-none no-underline"
-          >
-            <span className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d] transition group-hover:text-[#8d6432]">
-              ← Dashboard
-            </span>
-            <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
-              Return To Harbor
-            </span>
-          </Link>
-          <Link
-            href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
-          >
-            Stone Harbor
-          </Link>
-        </div>
+      {/* Canonical TOP NAV — shared component, see pageTopNav.tsx */}
+      <PageTopNav />
 
+      <section className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-4 pb-12 md:px-8">
         {/* HEADER — compact */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -714,95 +765,58 @@ export default function NewMembersBlogPage() {
           </p>
         </motion.div>
 
-        {/* STICKY FILTER BAR */}
-        <div className="sticky top-0 z-20 -mx-4 mb-8 border-y border-[var(--sh-border-subtle)] bg-[#f3efe7]/95 px-4 py-3 backdrop-blur-sm md:-mx-8 md:px-8">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap gap-1.5">
-              {(["all", "yours", "clarity", "calm", "strength"] as const).map(
-                (f) => {
-                  const isActive = filter === f;
-                  let label = "";
-                  let accent = GOLD_DEEP;
-                  if (f === "all") label = "All";
-                  else if (f === "yours") {
-                    label = "Your Path";
-                    accent = stageMeta.accent;
-                  } else {
-                    label = PILLAR_META[f].label;
-                    accent = PILLAR_META[f].accent;
-                  }
-                  return (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => setFilter(f)}
-                      className="border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition"
-                      style={{
-                        borderColor: isActive
-                          ? accent
-                          : isDusk
-                            ? "rgba(255,255,255,0.12)"
-                            : "#e7e5e4",
-                        color: isActive
-                          ? accent
-                          : isDusk
-                            ? "rgba(255,255,255,0.65)"
-                            : "#57534e",
-                        backgroundColor: isActive
-                          ? isDusk
-                            ? "rgba(255,255,255,0.08)"
-                            : "white"
-                          : isDusk
-                            ? "rgba(255,255,255,0.03)"
-                            : "#f8f4ed",
-                      }}
-                    >
-                      {label}
-                    </button>
-                  );
-                },
-              )}
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {(["all", "internal", "external"] as const).map((m) => {
-                const isActive = sourceMode === m;
-                const label =
-                  m === "all"
-                    ? "All Sources"
-                    : m === "internal"
-                      ? "Stone Harbor"
-                      : "Trusted Sources";
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setSourceMode(m)}
-                    className="border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition"
-                    style={{
-                      borderColor: isActive
-                        ? GOLD_DEEP
-                        : isDusk
-                          ? "rgba(255,255,255,0.12)"
-                          : "#e7e5e4",
-                      color: isActive
-                        ? GOLD_DEEP
-                        : isDusk
-                          ? "rgba(255,255,255,0.65)"
-                          : "#57534e",
-                      backgroundColor: isActive
-                        ? isDusk
-                          ? "rgba(255,255,255,0.08)"
-                          : "white"
-                        : isDusk
-                          ? "rgba(255,255,255,0.03)"
-                          : "#f8f4ed",
-                    }}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+        {/* SOURCE TOGGLE — small segmented control, replaces the
+            earlier three-row sticky filter bar. Pillar filtering is
+            now expressed structurally by the three strips below, so
+            this control only narrows source kind. Not sticky on
+            purpose — once chosen, the source rarely changes
+            mid-session and a permanent band added visual noise. */}
+        <div className="mb-10 flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-muted)]">
+            Source
+          </span>
+          <div
+            role="radiogroup"
+            aria-label="Filter by source"
+            className={`inline-flex border ${
+              isDusk
+                ? "border-white/12 bg-white/[0.03]"
+                : "border-[#e7e5e4] bg-[#f8f4ed]"
+            }`}
+          >
+            {(
+              [
+                { value: "all", label: "Both" },
+                { value: "internal", label: "Stone Harbor" },
+                { value: "external", label: "Trusted Sources" },
+              ] as const
+            ).map((opt) => {
+              const isActive = sourceMode === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  onClick={() => setSourceMode(opt.value)}
+                  className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] transition"
+                  style={{
+                    color: isActive
+                      ? GOLD_DEEP
+                      : isDusk
+                        ? "rgba(255,255,255,0.65)"
+                        : "#57534e",
+                    backgroundColor: isActive
+                      ? isDusk
+                        ? "rgba(255,255,255,0.08)"
+                        : "white"
+                      : "transparent",
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -819,12 +833,14 @@ export default function NewMembersBlogPage() {
               Nothing here yet.
             </p>
             <p className="mt-2 text-sm text-[var(--sh-text-tertiary)]">
-              Try adjusting the filters above, or come back soon.
+              Try the other source, or come back soon.
             </p>
           </div>
         )}
 
-        {/* FEATURED */}
+        {/* FEATURED — full-width hero card. Lives ABOVE the pillar
+            strips and is NOT included in them, so the editor's chosen
+            leading thought always has its own slot. */}
         {featured && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -839,19 +855,35 @@ export default function NewMembersBlogPage() {
           </motion.div>
         )}
 
-        {/* PILLAR SECTIONS — external (images) first, then internal (gradients) */}
+        {/* PILLAR STRIPS — one per pillar, ordered so the member's
+            current path appears first. Each strip is a horizontal
+            scroller with snap, position dots, and (on desktop) hover
+            arrows. Click "See all in [pillar]" to expand the strip
+            into a full grid of every article in that pillar. */}
         {pillarSections.map((section) => {
           if (section.total === 0) return null;
           const meta = PILLAR_META[section.pillar];
           const isYours = section.pillar === userStage;
+          const isExpanded = expandedPillar === section.pillar;
+          // Strip "slides" include all items in date order PLUS a
+          // trailing "See all" card. The dot count includes that
+          // trailing card so the dots match scroll positions exactly.
+          const stripSlides = section.items;
+          const totalSlides = stripSlides.length + 1; // +1 for the See-all card
+          const activeIdx = activeIndex[section.pillar] ?? 0;
           return (
             <motion.section
               key={section.pillar}
+              ref={(el) => {
+                sectionRefs.current[section.pillar] = el;
+              }}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5 }}
               className="mb-14"
+              aria-roledescription="carousel"
+              aria-label={`${meta.label} articles`}
             >
               {/* Pillar header */}
               <div className="mb-5 flex items-end justify-between border-b border-[var(--sh-border-medium)] pb-3">
@@ -878,61 +910,198 @@ export default function NewMembersBlogPage() {
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-                  {section.total} {section.total === 1 ? "entry" : "entries"}
-                </span>
+                <div className="flex items-center gap-3">
+                  {/* Strip-mode arrows live in the header row so they
+                      never sit on top of card content (their previous
+                      position at the strip's left/right edges put
+                      them over article previews where the faded
+                      chevrons were invisible). Disabled state at
+                      boundary positions keeps the row width stable
+                      as the member scrolls — hiding them would
+                      cause the header to reflow on every scroll. */}
+                  {!isExpanded && (
+                    <div className="hidden items-center gap-1 md:flex">
+                      <button
+                        type="button"
+                        onClick={() => scrollStrip(section.pillar, "left")}
+                        disabled={activeIdx === 0}
+                        aria-label={`Scroll ${meta.label} backward`}
+                        className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
+                          isDusk
+                            ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
+                            : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                        }`}
+                      >
+                        <ChevronLeft size={14} strokeWidth={1.8} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => scrollStrip(section.pillar, "right")}
+                        disabled={activeIdx >= totalSlides - 1}
+                        aria-label={`Scroll ${meta.label} forward`}
+                        className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
+                          isDusk
+                            ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
+                            : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                        }`}
+                      >
+                        <ChevronRight size={14} strokeWidth={1.8} />
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => togglePillar(section.pillar)}
+                    className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition hover:text-[var(--sh-accent-gold)]"
+                  >
+                    {isExpanded
+                      ? "Collapse ↑"
+                      : `See all in ${meta.label} (${section.total}) →`}
+                  </button>
+                </div>
               </div>
 
-              {/* SUBSECTION 1 — External (images first) */}
-              {section.external.length > 0 && sourceMode !== "internal" && (
-                <div className="mb-8">
-                  <div className="mb-3 flex items-center gap-2">
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-[0.28em]"
-                      style={{ color: meta.accent }}
-                    >
-                      From Trusted Sources
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-                      · {section.external.length}
-                    </span>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {section.external.map((it) => (
-                      <FeedCard
+              {isExpanded ? (
+                // EXPANDED GRID VIEW — same external-above-internal
+                // rhythm as the previous full-page layout, but scoped
+                // to one pillar at a time.
+                <>
+                  {section.external.length > 0 &&
+                    sourceMode !== "internal" && (
+                      <div className="mb-8">
+                        <div className="mb-3 flex items-center gap-2">
+                          <span
+                            className="text-[10px] font-bold uppercase tracking-[0.28em]"
+                            style={{ color: meta.accent }}
+                          >
+                            From Trusted Sources
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
+                            · {section.external.length}
+                          </span>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {section.external.map((it) => (
+                            <FeedCard
+                              key={feedId(it)}
+                              item={it}
+                              variant="strip"
+                              onOpen={() => setOpenId(feedId(it))}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  {section.internal.length > 0 &&
+                    sourceMode !== "external" && (
+                      <div>
+                        <div className="mb-3 flex items-center gap-2">
+                          <span
+                            className="text-[10px] font-bold uppercase tracking-[0.28em]"
+                            style={{ color: meta.accent }}
+                          >
+                            Stone Harbor Original
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
+                            · {section.internal.length}
+                          </span>
+                        </div>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          {section.internal.map((it) => (
+                            <FeedCard
+                              key={feedId(it)}
+                              item={it}
+                              variant="strip"
+                              onOpen={() => setOpenId(feedId(it))}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                </>
+              ) : (
+                // STRIP MODE — horizontal scroller with snap, dots,
+                // and (desktop only) hover arrows.
+                <div className="relative">
+                  <div
+                    ref={(el) => {
+                      stripRefs.current[section.pillar] = el;
+                    }}
+                    onScroll={handleStripScroll(section.pillar)}
+                    role="region"
+                    aria-label={`${meta.label} articles strip`}
+                    tabIndex={0}
+                    className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] md:-mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
+                    style={{ scrollPaddingLeft: "1rem" }}
+                  >
+                    {stripSlides.map((it, idx) => (
+                      <div
                         key={feedId(it)}
-                        item={it}
-                        variant="strip"
-                        onOpen={() => setOpenId(feedId(it))}
-                      />
+                        role="group"
+                        aria-roledescription="slide"
+                        aria-label={`${idx + 1} of ${totalSlides}`}
+                        className="w-[78%] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[28%]"
+                      >
+                        <FeedCard
+                          item={it}
+                          variant="strip"
+                          onOpen={() => setOpenId(feedId(it))}
+                        />
+                      </div>
                     ))}
+                    {/* Trailing "See all" affordance — same dimensions
+                        as a card so it sits inside the snap rhythm. */}
+                    <button
+                      type="button"
+                      onClick={() => togglePillar(section.pillar)}
+                      aria-label={`See all ${section.total} articles in ${meta.label}`}
+                      className={`group flex w-[78%] shrink-0 snap-start flex-col items-center justify-center border border-dashed p-8 text-center transition sm:w-[46%] md:w-[32%] lg:w-[28%] ${
+                        isDusk
+                          ? "border-white/15 bg-white/[0.02] hover:border-[var(--sh-accent-gold)]/60 hover:bg-white/[0.05]"
+                          : "border-[var(--sh-border-medium)] bg-white/40 hover:border-[var(--sh-accent-gold)] hover:bg-white/70"
+                      }`}
+                    >
+                      <span
+                        className="text-[10px] font-bold uppercase tracking-[0.28em]"
+                        style={{ color: meta.accent }}
+                      >
+                        See all in {meta.label}
+                      </span>
+                      <span
+                        className={`${serif.className} mt-3 text-3xl italic text-[var(--sh-text-secondary)]`}
+                      >
+                        {section.total}{" "}
+                        {section.total === 1 ? "piece" : "pieces"}
+                      </span>
+                      <span className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)]">
+                        Open full view →
+                      </span>
+                    </button>
                   </div>
-                </div>
-              )}
 
-              {/* SUBSECTION 2 — Internal (gradients) */}
-              {section.internal.length > 0 && sourceMode !== "external" && (
-                <div>
-                  <div className="mb-3 flex items-center gap-2">
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-[0.28em]"
-                      style={{ color: meta.accent }}
-                    >
-                      Stone Harbor Original
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)]">
-                      · {section.internal.length}
-                    </span>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {section.internal.map((it) => (
-                      <FeedCard
-                        key={feedId(it)}
-                        item={it}
-                        variant="strip"
-                        onOpen={() => setOpenId(feedId(it))}
-                      />
-                    ))}
+                  {/* Position dots — visual indicator only, not
+                      clickable. One dot per slide (including the
+                      trailing "See all" card). */}
+                  <div
+                    aria-hidden="true"
+                    className="mt-3 flex justify-end gap-1.5 pr-1"
+                  >
+                    {Array.from({ length: totalSlides }).map((_, i) => {
+                      const active = i === activeIdx;
+                      return (
+                        <span
+                          key={i}
+                          className="h-1.5 w-1.5 rounded-full transition"
+                          style={{
+                            backgroundColor: active
+                              ? meta.accent
+                              : isDusk
+                                ? "rgba(255,255,255,0.20)"
+                                : "rgba(0,0,0,0.18)",
+                          }}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}

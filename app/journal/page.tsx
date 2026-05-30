@@ -38,6 +38,7 @@ import {
 import { todaysPrompt as sharedTodaysPrompt } from "@/lib/dailyPrompts";
 import { useTheme } from "@/app/components/themeProvider";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { PageTopNav } from "@/app/components/pageTopNav";
 import { VentInput, VentTextarea } from "@/app/components/ventField";
 import { UnsavedChangesModal } from "@/app/components/unsavedChangesModal";
 import { useUnsavedChangesWarning } from "@/lib/hooks/useUnsavedChangesWarning";
@@ -70,7 +71,12 @@ const moodOptions = [
   { value: "grounded", label: "Grounded", color: "#586558" },
   { value: "confused", label: "Confused", color: "#9c8a6e" },
   { value: "angry", label: "Angry", color: "#a05a3c" },
-  { value: "sad", label: "Sad", color: "#5d6a78" },
+  // Sad deepened from #5d6a78 → #3e5670 (2026-05-31). The earlier value
+  // sat at nearly identical lightness/saturation to Grounded (#586558),
+  // and in the small 30-day strip dots the eye couldn't separate moss-
+  // gray from blue-gray. Going deeper rather than brighter is
+  // psychologically apt — sadness should read as the heavier emotion.
+  { value: "sad", label: "Sad", color: "#3e5670" },
   { value: "hopeful", label: "Hopeful", color: "#c4934e" },
   { value: "strong", label: "Strong", color: "#8d6432" },
 ] as const;
@@ -179,12 +185,20 @@ function buildMoodMap(
   entries: JournalEntry[],
 ): { date: Date; mood: string | null }[] {
   const days: { date: Date; mood: string | null }[] = [];
-  const moodByDate = new Map<string, string>();
+  // Map type widened to string | null so days with a saved entry but no
+  // selected mood are honestly represented as "wrote but didn't name a
+  // mood" rather than being silently bucketed as "grounded". An earlier
+  // version forced null → "grounded" on insert, which inflated the
+  // grounded count and misrepresented the member's actual pattern.
+  // Rendering treats null moods the same as no-entry days (blank
+  // square), which matches the legend copy ("blanks are days you
+  // didn't write or didn't name a mood").
+  const moodByDate = new Map<string, string | null>();
   // Use the FIRST (most recent) entry per day since they're already sorted desc.
   for (const entry of entries) {
     const key = new Date(entry.created_at).toDateString();
     if (!moodByDate.has(key)) {
-      moodByDate.set(key, entry.mood ?? "grounded");
+      moodByDate.set(key, entry.mood ?? null);
     }
   }
   const today = new Date();
@@ -730,28 +744,10 @@ export default function JournalPage() {
         {soundOn ? <SoundOn size={16} /> : <SoundOff size={16} />}
       </button>
 
-      <section className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-6 py-10 md:px-8">
-        {/* TOP NAV */}
-        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href="/dashboard"
-            className="group flex flex-col leading-none no-underline"
-          >
-            <span className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d] transition group-hover:text-[#8d6432]">
-              ← Dashboard
-            </span>
-            <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
-              Return To Harbor
-            </span>
-          </Link>
-          <Link
-            href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
-          >
-            Stone Harbor
-          </Link>
-        </div>
+      {/* Canonical TOP NAV — shared component, see pageTopNav.tsx */}
+      <PageTopNav />
 
+      <section className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-6 pb-10 md:px-8">
         {/* GREETING STRIP — streak + prompt + privacy */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}

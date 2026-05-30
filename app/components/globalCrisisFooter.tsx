@@ -49,8 +49,16 @@ import { CrisisFooter } from "./crisisFooter";
 
 // Prefixes where the crisis footer should NOT render. These have
 // their own footer treatments OR are mid-wizard surfaces where any
-// extra band would crack the containment (e.g. /map, which surfaces
-// the Crisis Modal in-flow rather than the 988 banner).
+// extra band would crack the containment.
+//
+// On the Map: only the wizard surfaces (/map/begin, /map/week/[n])
+// are hidden — those expose the BFI-10 / BPNSFS-12 instruments and
+// surface a Crisis Modal in-flow instead of the 988 banner. The hub
+// (/map) and the reader (/map/operating-manual) are passive destinations
+// equivalent to /dashboard or /journal and should keep the footer +
+// anchor like every other authenticated page. An earlier blanket
+// "/map" entry suppressed both, which was the cause of the
+// 2026-05-31 consistency complaint.
 const HIDDEN_PREFIXES = [
   "/login",
   "/register",
@@ -64,7 +72,8 @@ const HIDDEN_PREFIXES = [
   "/onboarding",
   "/suspended",
   "/offline",
-  "/map",
+  "/map/begin",
+  "/map/week",
   // Public marketing surfaces (/, /en, /es) handle their own footer
   // via the LanguagePicker component. We still hide here because the
   // root path "/" needs to be excluded explicitly below.

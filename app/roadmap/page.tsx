@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { PageTopNav } from "@/app/components/pageTopNav";
 import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
 import {
@@ -260,28 +261,13 @@ export default function RoadmapPage() {
       {/* Unified harbor ambience — same on every authenticated page */}
       <PageAmbience />
 
-      <section className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 py-8 md:px-8">
-        {/* TOP NAV */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href="/dashboard"
-            className="group flex flex-col leading-none no-underline"
-          >
-            <span className="text-base font-bold uppercase tracking-[0.28em] text-[#a9793d] transition group-hover:text-[#8d6432]">
-              ← Dashboard
-            </span>
-            <span className="mt-1 text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70">
-              Return To Harbor
-            </span>
-          </Link>
-          <Link
-            href="/"
-            className="text-xs font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)] transition hover:text-[#a9793d]"
-          >
-            Stone Harbor
-          </Link>
-        </div>
+      {/* Canonical TOP NAV — rendered above the narrower content
+          section so the ← Dashboard link anchors to the same X
+          position as on dashboard/journal/messages even though
+          roadmap content uses max-w-5xl. */}
+      <PageTopNav />
 
+      <section className="relative z-10 mx-auto w-full max-w-5xl flex-1 px-4 pb-8 md:px-8">
         {/* HEADER */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
