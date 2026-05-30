@@ -161,6 +161,7 @@ export default function MeditationPage() {
         <Link
           href="/dashboard"
           aria-label={t("aria.back")}
+          title={t("aria.back")}
           className="group flex items-center gap-2 text-[#c4934e] transition hover:text-white"
         >
           <ArrowLeft size={18} aria-hidden="true" />
@@ -172,6 +173,7 @@ export default function MeditationPage() {
         <button
           onClick={toggleSound}
           aria-label={soundOn ? t("aria.muteSound") : t("aria.playSound")}
+          title={soundOn ? t("aria.muteSound") : t("aria.playSound")}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white shadow-[0_6px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition hover:scale-110 hover:bg-white/20 md:h-12 md:w-12"
         >
           {soundOn ? (

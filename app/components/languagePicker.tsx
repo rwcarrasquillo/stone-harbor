@@ -67,12 +67,19 @@ export function LanguagePicker() {
     } else {
       // Phase 2 page (cookie-driven, e.g. /dashboard, /journal,
       // /messages, /members-blog, /resources, /roadmap, /welcome,
-      // /meditation, /vent). The cookie was just written; refresh
-      // re-fetches the page with next-intl's getRequestConfig
-      // reading the new cookie value.
-      startTransition(() => {
-        router.refresh();
-      });
+      // /meditation, /vent). The cookie was just written; we need
+      // a full reload so the server picks it up via
+      // getRequestConfig + NextIntlClientProvider re-mounts on the
+      // client with the new messages bundle.
+      //
+      // We tried router.refresh() first (lighter touch, preserves
+      // scroll position and client state) but in practice it failed
+      // to re-mount NextIntlClientProvider when only the cookie
+      // changed — pages stayed in the old locale and the picker
+      // indicator didn't update. Full reload is heavier but
+      // reliable, and language toggles are rare enough that the cost
+      // doesn't matter.
+      window.location.reload();
     }
   }
 

@@ -175,6 +175,7 @@ export default function VentPage() {
         <Link
           href="/dashboard"
           aria-label={t("aria.back")}
+          title={t("aria.back")}
           className="flex items-center gap-2 text-[#c4934e] transition hover:text-white"
         >
           <ArrowLeft size={18} aria-hidden="true" />
