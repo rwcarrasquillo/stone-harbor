@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 /**
  * Stone Harbor — AmnioticBackdrop.
@@ -28,6 +28,22 @@ import { motion } from "framer-motion";
  *   All layers are CSS `transform` and `opacity` animations — the
  *   GPU handles them and they cost almost nothing. No reflows, no
  *   layout thrash. Tested on iPhone SE with no frame drops.
+ *
+ *   Three composite-cost guards (2026-05-31, after reports of subtle
+ *   Dusk-only flicker on some hardware):
+ *
+ *     1. `will-change: transform, opacity` on each animated layer so
+ *        the GPU keeps them on dedicated composite layers. Prevents
+ *        the underlying page content from being repainted every time
+ *        a gradient drifts.
+ *     2. Blur radii lowered (80px → 50px, 70px → 45px, 60px → 40px).
+ *        Blur cost scales nonlinearly; the visual change is
+ *        imperceptible at these sizes, the compositor savings real.
+ *     3. `useReducedMotion()` — if the OS-level "reduce motion"
+ *        setting is on, we render the layers fully static (no
+ *        framer-motion animate prop). Same look, no animation cost.
+ *        Users sensitive to motion (or affected by monitor flicker)
+ *        can opt out via System Settings.
  *
  * Usage:
  *
@@ -66,6 +82,11 @@ export function AmnioticBackdrop({
   // Multiply all per-layer opacities by the intensity prop.
   const op = (n: number) => Math.max(0, Math.min(1, n * intensity));
 
+  // When the OS-level "reduce motion" setting is on, framer-motion's
+  // hook returns true and we render the gradients fully static.
+  // Eliminates per-frame composite work for users sensitive to motion.
+  const reducedMotion = useReducedMotion();
+
   return (
     <div
       aria-hidden="true"
@@ -76,11 +97,15 @@ export function AmnioticBackdrop({
 
       {/* Upper-right gold blob — the dominant warmth */}
       <motion.div
-        animate={{
-          x: ["-8%", "12%", "-8%"],
-          y: ["-6%", "8%", "-6%"],
-          scale: [1, 1.18, 1],
-        }}
+        animate={
+          reducedMotion
+            ? undefined
+            : {
+                x: ["-8%", "12%", "-8%"],
+                y: ["-6%", "8%", "-6%"],
+                scale: [1, 1.18, 1],
+              }
+        }
         transition={{
           duration: 58,
           repeat: Infinity,
@@ -89,17 +114,22 @@ export function AmnioticBackdrop({
         className="absolute -top-1/4 -right-1/4 h-[110%] w-[90%]"
         style={{
           background: `radial-gradient(circle, rgba(196,147,78,${op(0.32)}) 0%, rgba(196,147,78,${op(0.10)}) 35%, transparent 70%)`,
-          filter: "blur(60px)",
+          filter: "blur(40px)",
+          willChange: reducedMotion ? undefined : "transform, opacity",
         }}
       />
 
       {/* Lower-left deeper amber blob — counterweight, slower */}
       <motion.div
-        animate={{
-          x: ["8%", "-12%", "8%"],
-          y: ["6%", "-8%", "6%"],
-          scale: [1, 1.22, 1],
-        }}
+        animate={
+          reducedMotion
+            ? undefined
+            : {
+                x: ["8%", "-12%", "8%"],
+                y: ["6%", "-8%", "6%"],
+                scale: [1, 1.22, 1],
+              }
+        }
         transition={{
           duration: 75,
           repeat: Infinity,
@@ -108,16 +138,21 @@ export function AmnioticBackdrop({
         className="absolute -bottom-1/4 -left-1/4 h-[110%] w-[100%]"
         style={{
           background: `radial-gradient(circle, rgba(169,121,61,${op(0.22)}) 0%, rgba(169,121,61,${op(0.06)}) 40%, transparent 75%)`,
-          filter: "blur(80px)",
+          filter: "blur(50px)",
+          willChange: reducedMotion ? undefined : "transform, opacity",
         }}
       />
 
       {/* Center pulse — gentle breathing of the whole field */}
       <motion.div
-        animate={{
-          opacity: [op(0.4), op(0.6), op(0.4)],
-          scale: [1, 1.05, 1],
-        }}
+        animate={
+          reducedMotion
+            ? undefined
+            : {
+                opacity: [op(0.4), op(0.6), op(0.4)],
+                scale: [1, 1.05, 1],
+              }
+        }
         transition={{
           duration: 40,
           repeat: Infinity,
@@ -126,17 +161,22 @@ export function AmnioticBackdrop({
         className="absolute inset-0"
         style={{
           background: `radial-gradient(ellipse 50% 50% at 50% 50%, rgba(196,147,78,${op(0.10)}) 0%, transparent 60%)`,
-          filter: "blur(70px)",
+          filter: "blur(45px)",
+          willChange: reducedMotion ? undefined : "transform, opacity",
         }}
       />
 
       {/* Subtle moss undertone — only if requested, very low opacity */}
       {moss && (
         <motion.div
-          animate={{
-            x: ["5%", "-5%", "5%"],
-            y: ["-3%", "3%", "-3%"],
-          }}
+          animate={
+            reducedMotion
+              ? undefined
+              : {
+                  x: ["5%", "-5%", "5%"],
+                  y: ["-3%", "3%", "-3%"],
+                }
+          }
           transition={{
             duration: 90,
             repeat: Infinity,
@@ -145,7 +185,8 @@ export function AmnioticBackdrop({
           className="absolute inset-0"
           style={{
             background: `radial-gradient(ellipse 60% 40% at 30% 70%, rgba(88,101,88,${op(0.10)}) 0%, transparent 65%)`,
-            filter: "blur(80px)",
+            filter: "blur(50px)",
+            willChange: reducedMotion ? undefined : "transform, opacity",
           }}
         />
       )}

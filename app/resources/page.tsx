@@ -1,14 +1,17 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { PageTopNav } from "@/app/components/pageTopNav";
 import { useTheme } from "@/app/components/themeProvider";
 import { serif, sans } from "@/lib/fonts";
-import { ArrowLeft } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+} from "@/app/components/icons";
 
 /**
  * Stone Harbor — /resources.
@@ -18,13 +21,24 @@ import { ArrowLeft } from "lucide-react";
  * shows only rows the admin team has approved (is_published = true,
  * is_rejected = false).
  *
- * Layout: simple cards grouped by pillar — Clarity / Calm / Strength.
- * Each card links out to the source. The "why this is here" sentence
- * comes from the row's summary (or classification_reasoning as a
- * fallback for older rows).
+ * Layout (2026-05-31 refactor): horizontal scroll strips, one per
+ * pillar — Clarity / Calm / Strength — with the member's current
+ * path first. Each strip uses CSS scroll-snap with peek so the
+ * member can see "there's more here" without endless vertical
+ * scroll. Mirrors the /members-blog architecture for cross-page
+ * consistency. /resources has no internal posts (all external) so
+ * the source toggle is omitted, and no featured hero either —
+ * the page jumps straight to the strips after the header.
  *
- * Replaces the previous "Coming Soon" stub. Discoverable from the
- * dashboard's new "Resources" door.
+ * Mechanics:
+ *   - Each pillar strip ends with a "See all in [pillar]" card
+ *   - Clicking it expands the strip into a full grid (in-place)
+ *   - Arrows live in the section header next to the See-all link,
+ *     never on top of card content
+ *   - Position dots below the strip are visual indicators only
+ *
+ * Cards open the external URL in a new tab (target="_blank"). No
+ * modal — these articles live elsewhere and that's by design.
  */
 
 type Pillar = "clarity" | "calm" | "strength";
@@ -56,11 +70,76 @@ const PILLAR_META: Record<Pillar, { label: string; description: string }> = {
   },
 };
 
+function normalizeStage(value: string | null | undefined): Pillar {
+  const lower = value?.toLowerCase().trim();
+  if (lower === "calm") return "calm";
+  if (lower === "strength" || lower === "strenght") return "strength";
+  return "clarity";
+}
+
+// Inline card used both inside the horizontal strip and in the
+// expanded grid view. Same hit target everywhere — opens the
+// external article in a new tab.
+function ResourceCard({
+  item,
+  isDusk,
+}: {
+  item: ExternalItem;
+  isDusk: boolean;
+}) {
+  return (
+    <a
+      href={item.external_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`group flex h-full flex-col rounded-none border p-4 transition md:p-5 ${
+        isDusk
+          ? "border-white/10 bg-black/30 hover:border-[var(--sh-accent-gold)]/40 hover:bg-black/45"
+          : "border-stone-200 bg-white/70 hover:border-[var(--sh-accent-gold)]/40 hover:bg-white"
+      }`}
+    >
+      <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]">
+        {item.source_name}
+      </p>
+      <h3
+        className={`${serif.className} mt-2 text-xl font-medium leading-snug text-[var(--sh-text-primary)] md:text-2xl`}
+      >
+        {item.title}
+      </h3>
+      {(item.summary || item.classification_reasoning) && (
+        <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]">
+          {item.summary ?? item.classification_reasoning}
+        </p>
+      )}
+      <span className="mt-auto pt-4 text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)] transition group-hover:text-[var(--sh-text-primary)]">
+        Read at source →
+      </span>
+    </a>
+  );
+}
+
 export default function ResourcesPage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
   const [items, setItems] = useState<ExternalItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userStage, setUserStage] = useState<Pillar>("clarity");
+  const [expandedPillar, setExpandedPillar] = useState<Pillar | null>(null);
+  const [activeIndex, setActiveIndex] = useState<Record<Pillar, number>>({
+    clarity: 0,
+    calm: 0,
+    strength: 0,
+  });
+  const stripRefs = useRef<Record<Pillar, HTMLDivElement | null>>({
+    clarity: null,
+    calm: null,
+    strength: null,
+  });
+  const sectionRefs = useRef<Record<Pillar, HTMLElement | null>>({
+    clarity: null,
+    calm: null,
+    strength: null,
+  });
 
   useEffect(() => {
     void load();
@@ -69,6 +148,17 @@ export default function ResourcesPage() {
   async function load() {
     setLoading(true);
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("healing_stage")
+          .eq("id", user.id)
+          .single();
+        setUserStage(normalizeStage(profile?.healing_stage));
+      }
       const { data, error } = await supabase
         .from("external_content")
         .select(
@@ -89,13 +179,58 @@ export default function ResourcesPage() {
     }
   }
 
-  const byPillar: Record<Pillar, ExternalItem[]> = {
-    clarity: [],
-    calm: [],
-    strength: [],
-  };
-  for (const it of items) {
-    if (it.pillar && byPillar[it.pillar]) byPillar[it.pillar].push(it);
+  // Group items by pillar, ordered so the member's current path
+  // appears first. Mirrors the /members-blog pillarSections shape.
+  const pillarSections = useMemo<
+    { pillar: Pillar; items: ExternalItem[] }[]
+  >(() => {
+    const order: Pillar[] = [userStage];
+    (["clarity", "calm", "strength"] as Pillar[]).forEach((p) => {
+      if (p !== userStage) order.push(p);
+    });
+    return order.map((pillar) => ({
+      pillar,
+      items: items.filter((it) => it.pillar === pillar),
+    }));
+  }, [items, userStage]);
+
+  // Pull the per-card stride (card width + gap) off the first
+  // child of the scroller. 16px addition matches `gap-4`.
+  function cardStrideFromContainer(el: HTMLDivElement): number {
+    const first = el.firstElementChild as HTMLElement | null;
+    if (!first) return 0;
+    return first.getBoundingClientRect().width + 16;
+  }
+
+  function handleStripScroll(pillar: Pillar) {
+    return (e: React.UIEvent<HTMLDivElement>) => {
+      const el = e.currentTarget;
+      const stride = cardStrideFromContainer(el);
+      if (!stride) return;
+      const idx = Math.round(el.scrollLeft / stride);
+      setActiveIndex((s) => (s[pillar] === idx ? s : { ...s, [pillar]: idx }));
+    };
+  }
+
+  function scrollStrip(pillar: Pillar, direction: "left" | "right") {
+    const el = stripRefs.current[pillar];
+    if (!el) return;
+    const stride = cardStrideFromContainer(el);
+    if (!stride) return;
+    el.scrollBy({
+      left: direction === "left" ? -stride : stride,
+      behavior: "smooth",
+    });
+  }
+
+  function togglePillar(pillar: Pillar) {
+    setExpandedPillar((current) => (current === pillar ? null : pillar));
+    requestAnimationFrame(() => {
+      const sectionEl = sectionRefs.current[pillar];
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
   }
 
   return (
@@ -105,23 +240,14 @@ export default function ResourcesPage() {
       <InactivityGate />
       <PageAmbience />
 
-      <header className="relative z-30 px-4 py-5 md:px-10 md:py-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link
-            href="/dashboard"
-            aria-label="Back to dashboard"
-            className="group inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)] transition hover:text-[var(--sh-text-primary)] md:text-sm md:tracking-[0.28em]"
-          >
-            <ArrowLeft size={16} aria-hidden="true" />
-            <span>Dashboard</span>
-          </Link>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)]/80 md:text-sm">
-            Resources
-          </p>
-        </div>
-      </header>
+      {/* Canonical TOP NAV — shared component */}
+      <PageTopNav />
 
-      <section className="relative z-20 mx-auto w-full max-w-5xl flex-1 px-5 pb-20 md:px-8">
+      {/* Widened from max-w-5xl to max-w-7xl (2026-05-31) so the
+          horizontal strips have room to show the peek on wider
+          viewports — matches the dashboard/journal/messages/
+          members-blog content rhythm. */}
+      <section className="relative z-20 mx-auto w-full max-w-7xl flex-1 px-4 pb-20 md:px-8">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -156,56 +282,190 @@ export default function ResourcesPage() {
           </div>
         ) : (
           <div className="mt-12 space-y-16">
-            {(Object.keys(byPillar) as Pillar[]).map((pillar) => {
-              const list = byPillar[pillar];
-              if (list.length === 0) return null;
-              const meta = PILLAR_META[pillar];
+            {pillarSections.map((section) => {
+              if (section.items.length === 0) return null;
+              const meta = PILLAR_META[section.pillar];
+              const isYours = section.pillar === userStage;
+              const isExpanded = expandedPillar === section.pillar;
+              const totalSlides = section.items.length + 1; // +1 for "See all" card
+              const activeIdx = activeIndex[section.pillar] ?? 0;
               return (
-                <section key={pillar}>
-                  <div className="mb-5 md:mb-7">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-                      {meta.label}
-                    </p>
-                    <p
-                      className={`${serif.className} mt-1 text-xl italic text-[var(--sh-text-secondary)] md:text-2xl`}
-                    >
-                      {meta.description}
-                    </p>
+                <motion.section
+                  key={section.pillar}
+                  ref={(el) => {
+                    sectionRefs.current[section.pillar] = el;
+                  }}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-60px" }}
+                  transition={{ duration: 0.5 }}
+                  aria-roledescription="carousel"
+                  aria-label={`${meta.label} resources`}
+                >
+                  {/* Pillar header — title left, arrows + See-all right */}
+                  <div className="mb-5 flex items-end justify-between border-b border-[var(--sh-border-medium)] pb-3 md:mb-6">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <h2
+                          className={`${serif.className} text-3xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
+                        >
+                          {meta.label}
+                        </h2>
+                        {isYours && (
+                          <span className="border border-[var(--sh-accent-gold)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.22em] text-[var(--sh-accent-gold)]">
+                            Your Path
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className={`${serif.className} mt-1 text-sm italic text-[var(--sh-text-secondary)] md:text-base`}
+                      >
+                        {meta.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {/* Strip-mode arrows in the header row so they
+                          never sit on top of card content (same
+                          pattern shipped to /members-blog). Disabled
+                          state at boundary positions keeps the row
+                          width stable as the member scrolls. */}
+                      {!isExpanded && (
+                        <div className="hidden items-center gap-1 md:flex">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              scrollStrip(section.pillar, "left")
+                            }
+                            disabled={activeIdx === 0}
+                            aria-label={`Scroll ${meta.label} backward`}
+                            className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
+                              isDusk
+                                ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
+                                : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                            }`}
+                          >
+                            <ChevronLeft size={14} strokeWidth={1.8} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              scrollStrip(section.pillar, "right")
+                            }
+                            disabled={activeIdx >= totalSlides - 1}
+                            aria-label={`Scroll ${meta.label} forward`}
+                            className={`flex h-7 w-7 items-center justify-center border transition disabled:cursor-not-allowed disabled:opacity-25 ${
+                              isDusk
+                                ? "border-white/20 bg-white/[0.05] text-white hover:bg-white/[0.12]"
+                                : "border-[var(--sh-border-medium)] bg-white text-[var(--sh-text-primary)] hover:bg-[#f8f4ed]"
+                            }`}
+                          >
+                            <ChevronRight size={14} strokeWidth={1.8} />
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => togglePillar(section.pillar)}
+                        className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition hover:text-[var(--sh-accent-gold)]"
+                      >
+                        {isExpanded
+                          ? "Collapse ↑"
+                          : `See all in ${meta.label} (${section.items.length}) →`}
+                      </button>
+                    </div>
                   </div>
-                  <ul className="space-y-4 md:space-y-5">
-                    {list.map((it) => (
-                      <li key={it.id}>
-                        <a
-                          href={it.external_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`group block rounded-none border p-4 transition md:p-6 ${
+
+                  {isExpanded ? (
+                    // EXPANDED GRID — same article cards, in a
+                    // full grid instead of horizontal strip.
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {section.items.map((it) => (
+                        <ResourceCard
+                          key={it.id}
+                          item={it}
+                          isDusk={isDusk}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    // STRIP MODE — horizontal scroller with snap,
+                    // trailing "See all" card, dots below.
+                    <div>
+                      <div
+                        ref={(el) => {
+                          stripRefs.current[section.pillar] = el;
+                        }}
+                        onScroll={handleStripScroll(section.pillar)}
+                        role="region"
+                        aria-label={`${meta.label} resources strip`}
+                        tabIndex={0}
+                        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] md:-mx-0 md:px-0 [&::-webkit-scrollbar]:hidden"
+                        style={{ scrollPaddingLeft: "1rem" }}
+                      >
+                        {section.items.map((it, idx) => (
+                          <div
+                            key={it.id}
+                            role="group"
+                            aria-roledescription="slide"
+                            aria-label={`${idx + 1} of ${totalSlides}`}
+                            className="w-[78%] shrink-0 snap-start sm:w-[46%] md:w-[32%] lg:w-[28%]"
+                          >
+                            <ResourceCard item={it} isDusk={isDusk} />
+                          </div>
+                        ))}
+                        {/* Trailing "See all" card — same snap rhythm */}
+                        <button
+                          type="button"
+                          onClick={() => togglePillar(section.pillar)}
+                          aria-label={`See all ${section.items.length} resources in ${meta.label}`}
+                          className={`group flex w-[78%] shrink-0 snap-start flex-col items-center justify-center border border-dashed p-8 text-center transition sm:w-[46%] md:w-[32%] lg:w-[28%] ${
                             isDusk
-                              ? "border-white/10 bg-black/30 hover:border-[var(--sh-accent-gold)]/40 hover:bg-black/45"
-                              : "border-stone-200 bg-white/70 hover:border-[var(--sh-accent-gold)]/40 hover:bg-white"
+                              ? "border-white/15 bg-white/[0.02] hover:border-[var(--sh-accent-gold)]/60 hover:bg-white/[0.05]"
+                              : "border-[var(--sh-border-medium)] bg-white/40 hover:border-[var(--sh-accent-gold)] hover:bg-white/70"
                           }`}
                         >
-                          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-text-tertiary)]">
-                            {it.source_name}
-                          </p>
-                          <h3
-                            className={`${serif.className} mt-2 text-xl font-medium leading-snug text-[var(--sh-text-primary)] md:text-2xl`}
-                          >
-                            {it.title}
-                          </h3>
-                          {(it.summary || it.classification_reasoning) && (
-                            <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)] md:text-base">
-                              {it.summary ?? it.classification_reasoning}
-                            </p>
-                          )}
-                          <span className="mt-4 inline-block text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)] transition group-hover:text-[var(--sh-text-primary)]">
-                            Read at source →
+                          <span className="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)]">
+                            See all in {meta.label}
                           </span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
+                          <span
+                            className={`${serif.className} mt-3 text-3xl italic text-[var(--sh-text-secondary)]`}
+                          >
+                            {section.items.length}{" "}
+                            {section.items.length === 1
+                              ? "piece"
+                              : "pieces"}
+                          </span>
+                          <span className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)]">
+                            Open full view →
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Position dots — visual only */}
+                      <div
+                        aria-hidden="true"
+                        className="mt-3 flex justify-end gap-1.5 pr-1"
+                      >
+                        {Array.from({ length: totalSlides }).map((_, i) => {
+                          const active = i === activeIdx;
+                          return (
+                            <span
+                              key={i}
+                              className="h-1.5 w-1.5 rounded-full transition"
+                              style={{
+                                backgroundColor: active
+                                  ? "var(--sh-accent-gold)"
+                                  : isDusk
+                                    ? "rgba(255,255,255,0.20)"
+                                    : "rgba(0,0,0,0.18)",
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </motion.section>
               );
             })}
           </div>

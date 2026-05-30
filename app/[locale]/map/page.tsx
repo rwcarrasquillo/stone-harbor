@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { PageTopNav } from "@/app/components/pageTopNav";
+import { InactivityGate } from "@/app/components/inactivityGate";
 import { LanguagePicker } from "@/app/components/languagePicker";
 
 /**
@@ -51,7 +53,9 @@ const COPY = {
       "Anything you write is private. Nothing is shared without your asking.",
       "The Map is for clarity, not diagnosis. It will never tell you what is wrong with you.",
     ],
-    back: "Back to dashboard",
+    back: "Dashboard",
+    backEyebrow: "Return To Harbor",
+    brand: "Stone Harbor",
   },
   es: {
     eyebrow: "El Mapa",
@@ -69,7 +73,9 @@ const COPY = {
       "Lo que escribas es privado. Nada se comparte sin que lo pidas.",
       "El Mapa busca claridad, no diagnóstico. Nunca te dirá qué está mal contigo.",
     ],
-    back: "Volver al panel",
+    back: "Panel",
+    backEyebrow: "Volver Al Puerto",
+    brand: "Stone Harbor",
   },
 };
 
@@ -129,8 +135,24 @@ export default function MapHubPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0A0A0B] text-stone-100">
+      {/* InactivityGate added 2026-05-31 for parity with every other
+          authenticated member surface — Map sessions touch BFI-10 /
+          BPNSFS-12 instruments and journal-style writing, so leaving
+          a tab open in a shared device was a privacy gap. */}
+      <InactivityGate />
       <PageAmbience />
-      <section className="relative z-10 mx-auto max-w-2xl px-5 py-20 md:px-8 md:py-32">
+      {/* Canonical TOP NAV — localized labels passed through so the
+          band reads in the active language. backHref points at the
+          locale-aware dashboard, wordmarkHref at the locale root. */}
+      <PageTopNav
+        backHref={`/${locale}/dashboard`}
+        backLabel={t.back}
+        backEyebrow={t.backEyebrow}
+        wordmark={t.brand}
+        wordmarkHref={`/${locale}`}
+      />
+
+      <section className="relative z-10 mx-auto max-w-2xl px-5 pb-12 md:px-8 md:pb-20">
         <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[#c4934e]">
           {t.eyebrow}
         </p>
@@ -196,13 +218,10 @@ export default function MapHubPage() {
           </ul>
         </section>
 
-        <div className="mt-16 flex items-center justify-between">
-          <Link
-            href={`/${locale}/dashboard`}
-            className="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-400 transition hover:text-[#c4934e]"
-          >
-            ← {t.back}
-          </Link>
+        {/* Locale switcher only — the ← Dashboard affordance moved to
+            the top nav for consistency with /messages, /meditation,
+            and /journal. */}
+        <div className="mt-16 flex items-center justify-end">
           <LanguagePicker />
         </div>
       </section>

@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
 import { PageAmbience } from "@/app/components/pageAmbience";
+import { PageTopNav } from "@/app/components/pageTopNav";
+import { InactivityGate } from "@/app/components/inactivityGate";
 
 /**
  * Stone Harbor — /map/operating-manual.
@@ -32,6 +35,9 @@ const COPY = {
     notReadyBody:
       "Finish Week 1 of The Map first, then come back. The first chapter will be waiting.",
     back: "Back to the map",
+    dashBack: "Dashboard",
+    dashEyebrow: "Return To Harbor",
+    brand: "Stone Harbor",
     footer:
       "This document is for you. Re-read it on the days that ask for it.",
   },
@@ -42,6 +48,9 @@ const COPY = {
     notReadyBody:
       "Termina la Semana 1 de El Mapa primero, y vuelve. El primer capítulo te estará esperando.",
     back: "Volver al mapa",
+    dashBack: "Panel",
+    dashEyebrow: "Volver Al Puerto",
+    brand: "Stone Harbor",
     footer:
       "Este documento es para ti. Reléelo los días que lo pidan.",
   },
@@ -92,8 +101,22 @@ export default function OperatingManualPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0A0A0B] text-stone-100">
+      {/* InactivityGate added 2026-05-31 — reading one's own Operating
+          Manual on a shared device shouldn't keep the session open
+          indefinitely. Parity with every other authenticated page. */}
+      <InactivityGate />
       <PageAmbience />
-      <section className="relative z-10 mx-auto max-w-2xl px-5 py-20 md:px-8 md:py-32">
+      {/* Canonical TOP NAV — same shared component used across every
+          text-link page, with localized labels passed through. */}
+      <PageTopNav
+        backHref={`/${locale}/dashboard`}
+        backLabel={t.dashBack}
+        backEyebrow={t.dashEyebrow}
+        wordmark={t.brand}
+        wordmarkHref={`/${locale}`}
+      />
+
+      <section className="relative z-10 mx-auto max-w-2xl px-5 pb-12 md:px-8 md:pb-20">
         <p className="text-[10px] font-bold uppercase tracking-[0.36em] text-[#c4934e]">
           {t.cover}
         </p>
