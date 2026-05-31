@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
@@ -51,13 +52,21 @@ type MessageItem = {
   created_at: string;
 };
 
-function timeGreeting() {
+// Returns the shared timeOfDay catalog key for the current hour. The
+// caller resolves the actual label via t("timeOfDay.<key>") so the
+// greeting localizes with the interface language.
+function timeGreetingKey():
+  | "lateNight"
+  | "morning"
+  | "afternoon"
+  | "evening"
+  | "tonight" {
   const h = new Date().getHours();
-  if (h < 5) return "Late night";
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  if (h < 21) return "Good evening";
-  return "Tonight";
+  if (h < 5) return "lateNight";
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  if (h < 21) return "evening";
+  return "tonight";
 }
 
 function relativeTime(value: string) {
@@ -76,6 +85,8 @@ function relativeTime(value: string) {
 }
 
 export default function MessagesPage() {
+  const t = useTranslations("messages");
+  const tTime = useTranslations("timeOfDay");
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
 
@@ -397,7 +408,7 @@ export default function MessagesPage() {
           <p
             className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
-            Opening your conversations…
+            {t("loading")}
           </p>
         </div>
       </main>
@@ -431,50 +442,50 @@ export default function MessagesPage() {
         >
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-              {timeGreeting()}
+              {tTime(timeGreetingKey())}
             </p>
             <p
               className={`${serif.className} mt-2 text-2xl italic text-[#a9793d]`}
             >
-              Brotherhood.
+              {t("strip.brotherhood")}
             </p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#a9793d]">
-              Member-to-member only.
+              {t("strip.memberOnly")}
             </p>
           </div>
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-              Conversations
+              {t("strip.conversationsLabel")}
             </p>
             <p
               className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
             >
               {conversations.length === 0
-                ? "None yet."
+                ? t("strip.noneYet")
                 : conversations.length === 1
-                  ? "1 open."
-                  : `${conversations.length} open.`}
+                  ? t("strip.oneOpen")
+                  : t("strip.manyOpen", { count: conversations.length })}
             </p>
             <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
               {conversations.length === 0
-                ? "Reach out when you're ready."
-                : "Each one is a small act of courage."}
+                ? t("strip.reachOut")
+                : t("strip.smallAct")}
             </p>
           </div>
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
               <Lock size={14} className="text-[#a9793d]" />
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-                Privacy
+                {t("strip.privacyLabel")}
               </p>
             </div>
             <p
               className={`${serif.className} mt-2 text-xl italic leading-snug text-[var(--sh-text-primary)] md:text-2xl`}
             >
-              Stone Harbor staff cannot read your messages.
+              {t("strip.privacyHeadline")}
             </p>
             <p className="mt-2 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
-              Encrypted. Yours alone. Member-to-member, by design.
+              {t("strip.privacySub")}
             </p>
           </div>
         </motion.div>
@@ -510,28 +521,27 @@ export default function MessagesPage() {
               <div className="mb-3 flex items-center gap-2">
                 <MessageIcon size={14} className="text-[#a9793d]" />
                 <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#a9793d]">
-                  Private Inbox
+                  {t("inbox.eyebrow")}
                 </p>
               </div>
               <h1
                 className={`${serif.className} text-5xl font-medium leading-tight text-[var(--sh-text-primary)]`}
               >
-                Reach out.
+                {t("inbox.title")}
               </h1>
               <p className="mt-4 leading-relaxed text-[var(--sh-text-secondary)]">
-                A conversation is a small act of courage. Find another member to
-                begin.
+                {t("inbox.subtitle")}
               </p>
             </div>
 
             <div className="mb-8">
               <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
-                Find Member
+                {t("inbox.findMember")}
               </label>
               <VentInput
                 value={memberSearch}
                 onChange={(e) => searchMembers(e.target.value)}
-                placeholder="Search name, username, or email"
+                placeholder={t("inbox.searchPlaceholder")}
               />
               {searching && (
                 <div
@@ -541,12 +551,12 @@ export default function MessagesPage() {
                       : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
                   }`}
                 >
-                  Searching members…
+                  {t("inbox.searching")}
                 </div>
               )}
               {searchError && (
                 <div className="mt-3 border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700">
-                  Search error: {searchError}
+                  {t("inbox.searchError", { error: searchError })}
                 </div>
               )}
               {memberResults.length > 0 && (
@@ -574,7 +584,7 @@ export default function MessagesPage() {
                           {member.display_name ||
                             member.username ||
                             member.email ||
-                            "Stone Harbor Member"}
+                            t("inbox.memberFallback")}
                         </p>
                         <p className="truncate text-sm text-[var(--sh-text-tertiary)]">
                           {member.username
@@ -582,7 +592,7 @@ export default function MessagesPage() {
                             : member.email}
                         </p>
                         <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.22em] text-[#a9793d]">
-                          Start Conversation
+                          {t("inbox.startConversation")}
                         </p>
                       </div>
                     </button>
@@ -600,14 +610,14 @@ export default function MessagesPage() {
                         : "border-[var(--sh-border-subtle)] bg-[#f8f4ed]"
                     }`}
                   >
-                    No members found.
+                    {t("inbox.noMembersFound")}
                   </div>
                 )}
             </div>
 
             <div className="border-t border-[var(--sh-border-subtle)] pt-6">
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
-                Conversations
+                {t("inbox.conversationsLabel")}
               </p>
               {conversations.length === 0 ? (
                 <div
@@ -620,10 +630,10 @@ export default function MessagesPage() {
                   <p
                     className={`${serif.className} text-2xl italic text-[var(--sh-text-secondary)]`}
                   >
-                    No conversations yet.
+                    {t("inbox.noConversationsTitle")}
                   </p>
                   <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-tertiary)]">
-                    Reach out to one man this week. That&apos;s enough.
+                    {t("inbox.noConversationsSub")}
                   </p>
                 </div>
               ) : (
@@ -705,7 +715,7 @@ export default function MessagesPage() {
                     <Avatar profile={activeConversation.otherMember ?? null} />
                     <div>
                       <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#a9793d]">
-                        Conversation
+                        {t("thread.eyebrow")}
                       </p>
                       <h2
                         className={`${serif.className} mt-1 text-3xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
@@ -735,10 +745,10 @@ export default function MessagesPage() {
                         <p
                           className={`${serif.className} text-2xl italic text-[var(--sh-text-secondary)]`}
                         >
-                          No messages yet.
+                          {t("thread.noMessagesTitle")}
                         </p>
                         <p className="mt-2 text-sm leading-relaxed text-[var(--sh-text-tertiary)]">
-                          One honest sentence is enough.
+                          {t("thread.noMessagesSub")}
                         </p>
                       </div>
                     </div>
@@ -796,7 +806,7 @@ export default function MessagesPage() {
                   }`}
                 >
                   <label className="mb-2 block text-xs font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)]">
-                    Message
+                    {t("thread.composeLabel")}
                   </label>
                   <div className="grid gap-4 md:grid-cols-[1fr_auto]">
                     <VentTextarea
@@ -804,7 +814,7 @@ export default function MessagesPage() {
                       onChange={(e) => setMessageBody(e.target.value)}
                       rows={3}
                       compact
-                      placeholder="Write a private message…"
+                      placeholder={t("thread.composePlaceholder")}
                     />
                     <button
                       type="submit"
@@ -828,7 +838,7 @@ export default function MessagesPage() {
                         <Send size={14} />
                       )}
                       <span className="relative z-10">
-                        {sending ? "Sending…" : "Send"}
+                        {sending ? t("thread.sending") : t("thread.send")}
                       </span>
                       <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white/60 transition-all duration-500 group-hover:w-full" />
                     </button>
@@ -852,20 +862,21 @@ export default function MessagesPage() {
                   <span
                     className={`${serif.className} text-sm italic text-[#a9793d]`}
                   >
-                    {breathPhase === "inhale" ? "Inhale" : "Exhale"}
+                    {breathPhase === "inhale"
+                      ? t("empty.inhale")
+                      : t("empty.exhale")}
                   </span>
                 </motion.div>
                 <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#a9793d]">
-                  No Conversation Selected
+                  {t("empty.eyebrow")}
                 </p>
                 <h2
                   className={`${serif.className} mt-4 max-w-md text-4xl font-medium leading-snug text-[var(--sh-text-primary)] md:text-5xl`}
                 >
-                  A conversation is a small act of courage.
+                  {t("empty.headline")}
                 </h2>
                 <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--sh-text-secondary)]">
-                  When you&apos;re ready, choose a member from the left or
-                  search for one above.
+                  {t("empty.sub")}
                 </p>
               </div>
             )}

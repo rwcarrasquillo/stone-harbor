@@ -244,24 +244,51 @@
     "storyPromptStart": "Open this prompt"
   },
   "messages": {
-    "eyebrow": "Brotherhood",
-    "title": "Asynchronous company.",
-    "subtitle": "No streaks. No likes. No performance. Just quiet writing together.",
-    "promptLabel": "This week's prompt",
-    "writePlaceholder": "Reply, witness, or write your own…",
-    "send": "Send",
-    "sending": "Sending…",
-    "noMessages": "No messages yet.",
-    "noMessagesSub": "The next member to write goes first.",
-    "pairingLabel": "Brotherhood pairing",
-    "pairingUnlock": "Unlocks at Day 120",
-    "pairingMatched": "You've been paired with another harbor member.",
-    "anonymous": "A brother",
-    "you": "You",
-    "muted": "Muted",
-    "report": "Report",
-    "reportReason": "Why are you reporting this?",
-    "reportSubmit": "Submit report"
+    "loading": "Opening your conversations…",
+    "strip": {
+      "brotherhood": "Brotherhood.",
+      "memberOnly": "Member-to-member only.",
+      "conversationsLabel": "Conversations",
+      "noneYet": "None yet.",
+      "oneOpen": "1 open.",
+      "manyOpen": "{count} open.",
+      "reachOut": "Reach out when you're ready.",
+      "smallAct": "Each one is a small act of courage.",
+      "privacyLabel": "Privacy",
+      "privacyHeadline": "Stone Harbor staff cannot read your messages.",
+      "privacySub": "Encrypted. Yours alone. Member-to-member, by design."
+    },
+    "inbox": {
+      "eyebrow": "Private Inbox",
+      "title": "Reach out.",
+      "subtitle": "A conversation is a small act of courage. Find another member to begin.",
+      "findMember": "Find Member",
+      "searchPlaceholder": "Search name, username, or email",
+      "searching": "Searching members…",
+      "searchError": "Search error: {error}",
+      "startConversation": "Start Conversation",
+      "memberFallback": "Stone Harbor Member",
+      "noMembersFound": "No members found.",
+      "conversationsLabel": "Conversations",
+      "noConversationsTitle": "No conversations yet.",
+      "noConversationsSub": "Reach out to one man this week. That's enough."
+    },
+    "thread": {
+      "eyebrow": "Conversation",
+      "noMessagesTitle": "No messages yet.",
+      "noMessagesSub": "One honest sentence is enough.",
+      "composeLabel": "Message",
+      "composePlaceholder": "Write a private message…",
+      "send": "Send",
+      "sending": "Sending…"
+    },
+    "empty": {
+      "inhale": "Inhale",
+      "exhale": "Exhale",
+      "eyebrow": "No Conversation Selected",
+      "headline": "A conversation is a small act of courage.",
+      "sub": "When you're ready, choose a member from the left or search for one above."
+    }
   },
   "membersBlog": {
     "eyebrow": "Members Library",

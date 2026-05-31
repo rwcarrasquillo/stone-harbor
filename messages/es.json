@@ -244,24 +244,51 @@
     "storyPromptStart": "Abrir este prompt"
   },
   "messages": {
-    "eyebrow": "Hermandad",
-    "title": "Compañía sin prisa.",
-    "subtitle": "Sin rachas. Sin likes. Sin actuación. Solo escribir juntos en silencio.",
-    "promptLabel": "Prompt de esta semana",
-    "writePlaceholder": "Responde, acompaña, o escribe lo tuyo…",
-    "send": "Enviar",
-    "sending": "Enviando…",
-    "noMessages": "Aún no hay mensajes.",
-    "noMessagesSub": "El próximo miembro que escriba va primero.",
-    "pairingLabel": "Pareja de hermandad",
-    "pairingUnlock": "Se desbloquea en el Día 120",
-    "pairingMatched": "Te han emparejado con otro miembro del puerto.",
-    "anonymous": "Un hermano",
-    "you": "Tú",
-    "muted": "Silenciado",
-    "report": "Reportar",
-    "reportReason": "¿Por qué lo reportas?",
-    "reportSubmit": "Enviar reporte"
+    "loading": "Abriendo tus conversaciones…",
+    "strip": {
+      "brotherhood": "Hermandad.",
+      "memberOnly": "Solo entre miembros.",
+      "conversationsLabel": "Conversaciones",
+      "noneYet": "Ninguna todavía.",
+      "oneOpen": "1 abierta.",
+      "manyOpen": "{count} abiertas.",
+      "reachOut": "Acércate cuando estés listo.",
+      "smallAct": "Cada una es un pequeño acto de valentía.",
+      "privacyLabel": "Privacidad",
+      "privacyHeadline": "El equipo de Stone Harbor no puede leer tus mensajes.",
+      "privacySub": "Cifrado. Solo tuyo. De miembro a miembro, por diseño."
+    },
+    "inbox": {
+      "eyebrow": "Bandeja Privada",
+      "title": "Acércate.",
+      "subtitle": "Una conversación es un pequeño acto de valentía. Encuentra a otro miembro para empezar.",
+      "findMember": "Buscar Miembro",
+      "searchPlaceholder": "Busca nombre, usuario o correo",
+      "searching": "Buscando miembros…",
+      "searchError": "Error de búsqueda: {error}",
+      "startConversation": "Iniciar Conversación",
+      "memberFallback": "Miembro De Stone Harbor",
+      "noMembersFound": "No se encontraron miembros.",
+      "conversationsLabel": "Conversaciones",
+      "noConversationsTitle": "Aún no hay conversaciones.",
+      "noConversationsSub": "Acércate a un hombre esta semana. Con eso basta."
+    },
+    "thread": {
+      "eyebrow": "Conversación",
+      "noMessagesTitle": "Aún no hay mensajes.",
+      "noMessagesSub": "Una oración honesta es suficiente.",
+      "composeLabel": "Mensaje",
+      "composePlaceholder": "Escribe un mensaje privado…",
+      "send": "Enviar",
+      "sending": "Enviando…"
+    },
+    "empty": {
+      "inhale": "Inhala",
+      "exhale": "Exhala",
+      "eyebrow": "Ninguna Conversación Seleccionada",
+      "headline": "Una conversación es un pequeño acto de valentía.",
+      "sub": "Cuando estés listo, elige un miembro a la izquierda o busca uno arriba."
+    }
   },
   "membersBlog": {
     "eyebrow": "Biblioteca De Miembros",
