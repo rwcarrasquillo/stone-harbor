@@ -119,6 +119,80 @@
       "title": "Take sixty seconds.",
       "prompt": "One breath is enough to begin. The rest will follow.",
       "complete": "Sixty seconds. Well done. The harbor is patient."
+    },
+    "pillars": {
+      "clarity": {
+        "title": "Clarity",
+        "text": "Name what happened. Trust your perception again."
+      },
+      "calm": {
+        "title": "Calm",
+        "text": "Steady your nervous system. Reclaim your peace."
+      },
+      "strength": {
+        "title": "Strength",
+        "text": "Rebuild your identity, your boundaries, your forward motion."
+      }
+    },
+    "quote": {
+      "line1": "You don't need to be fixed.",
+      "line2": "You need to be found.",
+      "attribution": "— Stone Harbor"
+    },
+    "journey": {
+      "eyebrow": "Your Recovery Journey",
+      "title": "Where are you right now?",
+      "subtitle": "Choose the answer that feels closest. Stone Harbor will guide you toward the next grounded step.",
+      "options": {
+        "clarity": {
+          "label": "I feel confused",
+          "title": "Start with clarity.",
+          "identity": "Become the man who sees clearly.",
+          "text": "You may still be questioning what happened. Begin by naming patterns, separating facts from emotional noise, and rebuilding trust in your own perception.",
+          "action": "Start Seeing Clearly"
+        },
+        "calm": {
+          "label": "I feel overwhelmed",
+          "title": "Start with calm.",
+          "identity": "Become the man who is unshakable.",
+          "text": "Your nervous system may be carrying prolonged stress. Begin with grounding, breath, rest, and emotional regulation.",
+          "action": "Steady Yourself"
+        },
+        "strength": {
+          "label": "I am ready to rebuild",
+          "title": "Start with strength.",
+          "identity": "Become the man who rebuilds.",
+          "text": "You are ready to restore discipline, confidence, boundaries, and identity. The next step is rebuilding your life with structure.",
+          "action": "Begin Rebuilding"
+        }
+      }
+    },
+    "trust": {
+      "label": "Built On Proven Practice",
+      "ifs": "Internal Family Systems",
+      "act": "Acceptance & Commitment",
+      "somatic": "Somatic Practice",
+      "stoic": "Stoic Discipline",
+      "privacy": "Your reflections, your journey, your data — yours alone. Encrypted. Never sold. Never shared."
+    },
+    "footer": {
+      "tagline": "Men's Mental Wellness",
+      "beginHeader": "Begin",
+      "startHere": "Start Here",
+      "roadmap": "Roadmap",
+      "join": "Join",
+      "exploreHeader": "Explore",
+      "resources": "Resources",
+      "about": "About",
+      "privacy": "Privacy",
+      "crisisHeader": "If You Are In Crisis",
+      "crisisLine": "Call or text",
+      "crisisLineEnd": "— the Suicide & Crisis Lifeline. 24/7. Free. Confidential.",
+      "patience": "The harbor is patient."
+    },
+    "aria": {
+      "joinHarbor": "Join Stone Harbor",
+      "openDashboard": "Open dashboard"
     }
   },
   "login": {

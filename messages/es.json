@@ -119,6 +119,80 @@
       "title": "Tómate sesenta segundos.",
       "prompt": "Un respiro es suficiente para empezar. Lo demás vendrá.",
       "complete": "Sesenta segundos. Bien hecho. El puerto es paciente."
+    },
+    "pillars": {
+      "clarity": {
+        "title": "Claridad",
+        "text": "Nombra lo que pasó. Vuelve a confiar en tu percepción."
+      },
+      "calm": {
+        "title": "Calma",
+        "text": "Calma tu sistema nervioso. Recupera tu paz."
+      },
+      "strength": {
+        "title": "Fuerza",
+        "text": "Reconstruye tu identidad, tus límites, tu impulso hacia adelante."
+      }
+    },
+    "quote": {
+      "line1": "No necesitas ser arreglado.",
+      "line2": "Necesitas ser encontrado.",
+      "attribution": "— Stone Harbor"
+    },
+    "journey": {
+      "eyebrow": "Tu Viaje De Recuperación",
+      "title": "¿Dónde estás ahora mismo?",
+      "subtitle": "Elige la respuesta que se sienta más cercana. Stone Harbor te guiará al próximo paso firme.",
+      "options": {
+        "clarity": {
+          "label": "Me siento confundido",
+          "title": "Empieza con claridad.",
+          "identity": "Conviértete en el hombre que ve con claridad.",
+          "text": "Puede que aún cuestiones lo que pasó. Empieza nombrando patrones, separando hechos del ruido emocional, y reconstruyendo la confianza en tu propia percepción.",
+          "action": "Empezar A Ver Claro"
+        },
+        "calm": {
+          "label": "Me siento abrumado",
+          "title": "Empieza con calma.",
+          "identity": "Conviértete en el hombre inquebrantable.",
+          "text": "Tu sistema nervioso puede estar cargando estrés prolongado. Empieza con conexión a tierra, respiración, descanso y regulación emocional.",
+          "action": "Calmarte"
+        },
+        "strength": {
+          "label": "Estoy listo para reconstruir",
+          "title": "Empieza con fuerza.",
+          "identity": "Conviértete en el hombre que reconstruye.",
+          "text": "Estás listo para restaurar disciplina, confianza, límites e identidad. El próximo paso es reconstruir tu vida con estructura.",
+          "action": "Empezar A Reconstruir"
+        }
+      }
+    },
+    "trust": {
+      "label": "Construido Sobre Práctica Comprobada",
+      "ifs": "Sistemas De La Familia Interna",
+      "act": "Aceptación Y Compromiso",
+      "somatic": "Práctica Somática",
+      "stoic": "Disciplina Estoica",
+      "privacy": "Tus reflexiones, tu camino, tus datos — solo tuyos. Encriptados. Nunca vendidos. Nunca compartidos."
+    },
+    "footer": {
+      "tagline": "Bienestar Mental Para Hombres",
+      "beginHeader": "Empezar",
+      "startHere": "Empieza Aquí",
+      "roadmap": "Mapa De Ruta",
+      "join": "Únete",
+      "exploreHeader": "Explorar",
+      "resources": "Recursos",
+      "about": "Acerca De",
+      "privacy": "Privacidad",
+      "crisisHeader": "Si Estás En Crisis",
+      "crisisLine": "Llama o envía un mensaje al",
+      "crisisLineEnd": "— la Línea De Vida Para Suicidio Y Crisis. 24/7. Gratis. Confidencial.",
+      "patience": "El puerto es paciente."
+    },
+    "aria": {
+      "joinHarbor": "Unirse a Stone Harbor",
+      "openDashboard": "Abrir panel"
     }
   },
   "login": {
