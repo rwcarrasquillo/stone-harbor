@@ -24,38 +24,12 @@ const MOSS = "#586558";
 const journeyOptions: Record<
   JourneyKey,
   {
-    label: string;
-    title: string;
-    identity: string;
-    text: string;
-    action: string;
     accent: string;
   }
 > = {
-  clarity: {
-    label: "I feel confused",
-    title: "Start with clarity.",
-    identity: "Become the man who sees clearly.",
-    text: "You may still be questioning what happened. Begin by naming patterns, separating facts from emotional noise, and rebuilding trust in your own perception.",
-    action: "Start Seeing Clearly",
-    accent: GOLD_DEEP,
-  },
-  calm: {
-    label: "I feel overwhelmed",
-    title: "Start with calm.",
-    identity: "Become the man who is unshakable.",
-    text: "Your nervous system may be carrying prolonged stress. Begin with grounding, breath, rest, and emotional regulation.",
-    action: "Steady Yourself",
-    accent: MOSS,
-  },
-  strength: {
-    label: "I am ready to rebuild",
-    title: "Start with strength.",
-    identity: "Become the man who rebuilds.",
-    text: "You are ready to restore discipline, confidence, boundaries, and identity. The next step is rebuilding your life with structure.",
-    action: "Begin Rebuilding",
-    accent: GOLD_DEEP,
-  },
+  clarity: { accent: GOLD_DEEP },
+  calm: { accent: MOSS },
+  strength: { accent: GOLD_DEEP },
 };
 
 // Storm-mirror keys — the actual strings come from messages/{locale}.json
@@ -347,7 +321,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  aria-label="Log out"
+                  aria-label={t("nav.logout")}
                   className="rounded-none border border-[#c4934e] p-2 text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558] md:px-4 md:py-2"
                 >
                   <LogOut size={18} className="md:hidden" aria-hidden="true" />
@@ -358,7 +332,7 @@ export default function Home() {
               ) : (
                 <Link
                   href="/login"
-                  aria-label="Log in"
+                  aria-label={t("nav.login")}
                   className="rounded-none border border-[#c4934e] p-2 text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558] md:px-4 md:py-2"
                 >
                   <LogIn size={18} className="md:hidden" aria-hidden="true" />
@@ -369,7 +343,7 @@ export default function Home() {
               )}
               <Link
                 href={memberName ? "/dashboard" : "/register"}
-                aria-label={memberName ? "Open dashboard" : "Join Stone Harbor"}
+                aria-label={memberName ? t("aria.openDashboard") : t("aria.joinHarbor")}
                 className="rounded-none border border-[#c4934e] p-2 text-[#a9793d] transition hover:bg-[#c4934e] hover:text-black focus:outline-none focus:ring-2 focus:ring-[#586558] md:px-4 md:py-2"
               >
                 {memberName ? (
@@ -537,18 +511,18 @@ export default function Home() {
           {[
             {
               number: "01",
-              title: "Clarity",
-              text: "Name what happened. Trust your perception again.",
+              title: t("pillars.clarity.title"),
+              text: t("pillars.clarity.text"),
             },
             {
               number: "02",
-              title: "Calm",
-              text: "Steady your nervous system. Reclaim your peace.",
+              title: t("pillars.calm.title"),
+              text: t("pillars.calm.text"),
             },
             {
               number: "03",
-              title: "Strength",
-              text: "Rebuild your identity, your boundaries, your forward motion.",
+              title: t("pillars.strength.title"),
+              text: t("pillars.strength.text"),
             },
           ].map((item, idx) => (
             <motion.div
@@ -588,12 +562,12 @@ export default function Home() {
           <p
             className={`${serif.className} text-2xl italic leading-tight text-white/95 md:text-6xl`}
           >
-            &ldquo;You don&apos;t need to be fixed.
+            &ldquo;{t("quote.line1")}
             <br />
-            You need to be found.&rdquo;
+            {t("quote.line2")}&rdquo;
           </p>
           <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.4em] text-[#c4934e] md:mt-8 md:text-xs">
-            — Stone Harbor
+            {t("quote.attribution")}
           </p>
         </motion.div>
       </section>
@@ -603,16 +577,15 @@ export default function Home() {
         <div className="grid gap-6 md:grid-cols-[0.9fr_1.1fr] md:items-center md:gap-12">
           <div>
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#a9793d] md:mb-5 md:text-sm">
-              Your Recovery Journey
+              {t("journey.eyebrow")}
             </p>
             <h2
               className={`${serif.className} text-3xl font-medium leading-tight text-stone-900 md:text-7xl`}
             >
-              Where are you right now?
+              {t("journey.title")}
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-stone-600 md:mt-6 md:text-lg">
-              Choose the answer that feels closest. Stone Harbor will guide you
-              toward the next grounded step.
+              {t("journey.subtitle")}
             </p>
           </div>
           <div className="min-w-0 border border-stone-200 bg-white p-4 shadow-[0_18px_60px_rgba(0,0,0,0.12)] md:p-6">
@@ -656,7 +629,7 @@ export default function Home() {
                       className="text-sm font-bold uppercase tracking-[0.22em]"
                       style={{ color: option.accent }}
                     >
-                      {option.label}
+                      {t(`journey.options.${key}.label`)}
                     </span>
                   </button>
                 );
@@ -675,22 +648,22 @@ export default function Home() {
                   className="mb-3 text-xs font-bold uppercase tracking-[0.3em]"
                   style={{ color: selectedJourney.accent }}
                 >
-                  {selectedJourney.identity}
+                  {t(`journey.options.${selectedPath}.identity`)}
                 </p>
                 <h3
                   className={`${serif.className} text-2xl font-medium text-stone-900 md:text-4xl`}
                 >
-                  {selectedJourney.title}
+                  {t(`journey.options.${selectedPath}.title`)}
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-stone-600 md:mt-4 md:text-base">
-                  {selectedJourney.text}
+                  {t(`journey.options.${selectedPath}.text`)}
                 </p>
                 <Link
                   href="/start-here"
                   className="mt-5 inline-flex rounded-none border border-[#f4d7a1]/50 px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:scale-105 md:mt-7 md:px-8 md:py-4 md:text-sm"
                   style={{ backgroundColor: selectedJourney.accent }}
                 >
-                  {selectedJourney.action}
+                  {t(`journey.options.${selectedPath}.action`)}
                 </Link>
               </motion.div>
             </AnimatePresence>
@@ -702,20 +675,19 @@ export default function Home() {
       <section className="relative z-20 px-6 py-12 md:py-24">
         <div className="mx-auto max-w-5xl">
           <p className="mb-5 text-center text-[10px] font-semibold uppercase tracking-[0.4em] text-white/60 md:mb-8 md:text-xs">
-            Built On Proven Practice
+            {t("trust.label")}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[11px] uppercase tracking-[0.22em] text-white/75 md:gap-x-12 md:gap-y-6 md:text-sm md:tracking-[0.25em]">
-            <span>Internal Family Systems</span>
+            <span>{t("trust.ifs")}</span>
             <span className="text-[#c4934e]">·</span>
-            <span>Acceptance &amp; Commitment</span>
+            <span>{t("trust.act")}</span>
             <span className="text-[#c4934e]">·</span>
-            <span>Somatic Practice</span>
+            <span>{t("trust.somatic")}</span>
             <span className="text-[#c4934e]">·</span>
-            <span>Stoic Discipline</span>
+            <span>{t("trust.stoic")}</span>
           </div>
           <p className="mt-6 text-center text-[11px] leading-relaxed text-white/55 md:mt-10 md:text-xs">
-            Your reflections, your journey, your data — yours alone. Encrypted.
-            Never sold. Never shared.
+            {t("trust.privacy")}
           </p>
         </div>
       </section>
@@ -728,67 +700,68 @@ export default function Home() {
               Stone Harbor
             </p>
             <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-[#c4934e]/70">
-              Men&apos;s Mental Wellness
+              {t("footer.tagline")}
             </p>
           </div>
           <div>
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/60">
-              Begin
+              {t("footer.beginHeader")}
             </p>
             <ul className="space-y-2 text-sm text-white/80">
               <li>
                 <Link href="/start-here" className="hover:text-[#c4934e]">
-                  Start Here
+                  {t("footer.startHere")}
                 </Link>
               </li>
               <li>
                 <Link href="/roadmap" className="hover:text-[#c4934e]">
-                  Roadmap
+                  {t("footer.roadmap")}
                 </Link>
               </li>
               <li>
                 <Link href="/register" className="hover:text-[#c4934e]">
-                  Join
+                  {t("footer.join")}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/60">
-              Explore
+              {t("footer.exploreHeader")}
             </p>
             <ul className="space-y-2 text-sm text-white/80">
               <li>
                 <Link href="/resources" className="hover:text-[#c4934e]">
-                  Resources
+                  {t("footer.resources")}
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="hover:text-[#c4934e]">
-                  About
+                  {t("footer.about")}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-[#c4934e]">
-                  Privacy
+                  {t("footer.privacy")}
                 </Link>
               </li>
             </ul>
           </div>
           <div>
             <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-white/60">
-              If You Are In Crisis
+              {t("footer.crisisHeader")}
             </p>
             <p className="text-sm leading-relaxed text-white/80">
-              Call or text <span className="font-bold text-[#c4934e]">988</span>{" "}
-              — the Suicide &amp; Crisis Lifeline. 24/7. Free. Confidential.
+              {t("footer.crisisLine")}{" "}
+              <span className="font-bold text-[#c4934e]">988</span>{" "}
+              {t("footer.crisisLineEnd")}
             </p>
           </div>
         </div>
         <div className="mx-auto mt-8 max-w-7xl border-t border-white/10 pt-6 md:mt-16 md:pt-8">
           <div className="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between">
             <p className={`${serif.className} text-base italic text-white/70 md:text-lg`}>
-              The harbor is patient.
+              {t("footer.patience")}
             </p>
             {/* Language picker — quiet placement in the footer, same
                 pattern as the theme toggle. Switches between EN and
