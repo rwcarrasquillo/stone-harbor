@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { serif } from "@/lib/fonts";
 import { DURATION, EASE } from "@/lib/motion";
 
@@ -46,87 +47,102 @@ type GreetingCopy = {
   body: string;
 };
 
-function firstName(name?: string | null): string {
-  if (!name) return "friend";
-  return name.trim().split(/\s+/)[0] || "friend";
+/**
+ * Resolve the user-facing first name. The catalog provides the
+ * locale-aware fallback (e.g. "friend" / "amigo") via the
+ * `personalizedGreeting.fallbackName` key.
+ */
+function firstName(
+  name: string | null | undefined,
+  fallback: string,
+): string {
+  if (!name) return fallback;
+  return name.trim().split(/\s+/)[0] || fallback;
 }
 
 /**
- * Pure function — takes the inputs and returns the right copy.
- * Kept pure so it's easy to unit-test independently of the component.
+ * Pure function — takes the inputs and a `t` translator and returns
+ * the right copy. Kept pure (no hook calls inside) so it's easy to
+ * unit-test independently of the component. The translator is scoped
+ * to `dashboard.personalizedGreeting`.
  */
 function chooseGreeting({
   hour,
   daysSinceLastVisit,
   name,
+  t,
 }: {
   hour: number;
   daysSinceLastVisit: number | null;
   name?: string | null;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }): GreetingCopy {
-  const first = firstName(name);
+  const first = firstName(name, t("fallbackName"));
   const isLateNight = hour < 5 || hour >= 22;
   const isMorning = hour >= 5 && hour < 12;
   const isAfternoon = hour >= 12 && hour < 17;
   // evening is 17-21
 
+  const timeOfDayGreeting = isMorning
+    ? t("greetings.morning")
+    : isAfternoon
+      ? t("greetings.afternoon")
+      : t("greetings.evening");
+
   // First visit ever, or same-day return — the most "neutral" state.
   if (daysSinceLastVisit === null || daysSinceLastVisit === 0) {
     if (isLateNight) {
       return {
-        salutation: `It's late, ${first}.`,
-        body: "The harbor is here. Take your time.",
+        salutation: t("firstVisit.lateNightSalutation", { name: first }),
+        body: t("firstVisit.lateNightBody"),
       };
     }
-    const time = isMorning
-      ? "Good morning"
-      : isAfternoon
-        ? "Good afternoon"
-        : "Good evening";
     return {
-      salutation: `${time}, ${first}.`,
-      body: "The harbor remembers you. You don't owe anyone anything today.",
+      salutation: t("firstVisit.salutation", {
+        greeting: timeOfDayGreeting,
+        name: first,
+      }),
+      body: t("firstVisit.body"),
     };
   }
 
   // Been away a long time — explicitly grant permission to start over.
   if (daysSinceLastVisit >= 7) {
     return {
-      salutation: `Welcome back, ${first}.`,
-      body: "We were patient. Begin where you are — not where you left off.",
+      salutation: t("longGone.salutation", { name: first }),
+      body: t("longGone.body"),
     };
   }
 
   // A few days — acknowledge the gap without pressure.
   if (daysSinceLastVisit >= 3) {
     return {
-      salutation: `Welcome back, ${first}.`,
-      body: "A few days since you've been here. Whatever happened in between — you're welcome to return.",
+      salutation: t("fewDays.salutation", { name: first }),
+      body: t("fewDays.body"),
     };
   }
 
   // 1–2 days. Familiar, light.
   if (isLateNight) {
     return {
-      salutation: `It's late, ${first}.`,
-      body: "The harbor is here.",
+      salutation: t("recent.lateNightSalutation", { name: first }),
+      body: t("recent.lateNightBody"),
     };
   }
-  const time = isMorning
-    ? "Good morning"
-    : isAfternoon
-      ? "Good afternoon"
-      : "Good evening";
   return {
-    salutation: `${time}, ${first}.`,
-    body: "Good to see you again.",
+    salutation: t("recent.salutation", {
+      greeting: timeOfDayGreeting,
+      name: first,
+    }),
+    body: t("recent.body"),
   };
 }
 
 export function PersonalizedGreeting({ name, userId }: Props) {
+  const t = useTranslations("dashboard.personalizedGreeting");
   const [copy, setCopy] = useState<GreetingCopy>({
-    salutation: "Welcome.",
-    body: "The harbor is patient.",
+    salutation: t("defaultSalutation"),
+    body: t("defaultBody"),
   });
 
   useEffect(() => {
@@ -149,8 +165,8 @@ export function PersonalizedGreeting({ name, userId }: Props) {
     window.localStorage.setItem(storageKey, String(now));
 
     const hour = new Date().getHours();
-    setCopy(chooseGreeting({ hour, daysSinceLastVisit, name }));
-  }, [name, userId]);
+    setCopy(chooseGreeting({ hour, daysSinceLastVisit, name, t }));
+  }, [name, userId, t]);
 
   return (
     <motion.section
@@ -158,7 +174,7 @@ export function PersonalizedGreeting({ name, userId }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: DURATION.patient, ease: EASE.settle }}
       className="mb-5 md:mb-8"
-      aria-label="Welcome"
+      aria-label={t("ariaLabel")}
     >
       <h1
         className={`${serif.className} text-3xl font-medium italic leading-[1.05] text-[var(--sh-text-primary)] md:text-5xl`}

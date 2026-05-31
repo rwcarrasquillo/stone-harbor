@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
 import { InactivityGate } from "@/app/components/inactivityGate";
 import { serif, sans } from "@/lib/fonts";
@@ -174,6 +175,12 @@ function identityLine(stage: string) {
 export default function DashboardPage() {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
+  // i18n — `t` is the dashboard namespace translator. Nested keys
+  // (e.g. `nav.editProfile`, `strip.streakN`) are resolved via dot
+  // paths. NotificationCard, WithYouButton, WithYouCount, and
+  // DashboardCard each call their own `useTranslations` since they
+  // live outside this component's closure.
+  const t = useTranslations("dashboard");
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -903,7 +910,7 @@ export default function DashboardPage() {
           <p
             className={`${serif.className} mt-8 text-2xl italic text-[var(--sh-text-secondary)]`}
           >
-            Returning to your harbor…
+            {t("loading")}
           </p>
         </div>
       </main>
@@ -926,10 +933,10 @@ export default function DashboardPage() {
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-8 md:gap-4">
           <Link href="/" className="group flex flex-col leading-none no-underline">
             <span className="text-sm font-bold uppercase tracking-[0.22em] text-[#a9793d] transition group-hover:text-[#8d6432] md:text-base md:tracking-[0.28em]">
-              ← Stone Harbor
+              {t("nav.backToHome")}
             </span>
             <span className="mt-1 hidden text-[0.62rem] font-bold uppercase tracking-[0.18em] text-[#a9793d]/70 md:block">
-              Men&apos;s Mental Wellness
+              {t("nav.tagline")}
             </span>
           </Link>
           <div className="flex flex-wrap gap-2 md:gap-3">
@@ -938,7 +945,7 @@ export default function DashboardPage() {
                 On Sunlit: original cream-white treatment. */}
             <Link
               href="/welcome"
-              aria-label="Edit profile"
+              aria-label={t("nav.editProfileAria")}
               className={`group relative overflow-hidden rounded-none p-3 text-xs font-bold uppercase tracking-[0.22em] transition md:px-6 ${
                 isDusk
                   ? "border border-[#c4934e] bg-[#a9793d] text-white hover:bg-[#8d6432]"
@@ -947,13 +954,13 @@ export default function DashboardPage() {
             >
               <span className="relative z-10 inline-flex items-center md:gap-2">
                 <EditIcon size={14} />
-                <span className="hidden md:inline">Edit Profile</span>
+                <span className="hidden md:inline">{t("nav.editProfile")}</span>
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
             </Link>
             <Link
               href="/messages"
-              aria-label="Messages"
+              aria-label={t("nav.messagesAria")}
               className={`group relative overflow-hidden rounded-none p-3 text-xs font-bold uppercase tracking-[0.22em] transition md:px-6 ${
                 isDusk
                   ? "border border-[#c4934e] bg-[#a9793d] text-white hover:bg-[#8d6432]"
@@ -962,7 +969,7 @@ export default function DashboardPage() {
             >
               <span className="relative z-10 inline-flex items-center md:gap-2">
                 <Message size={14} />
-                <span className="hidden md:inline">Messages</span>
+                <span className="hidden md:inline">{t("nav.messages")}</span>
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
               {unreadMessageCount > 0 && (
@@ -979,7 +986,7 @@ export default function DashboardPage() {
             </Link>
             <button
               onClick={handleLogout}
-              aria-label="Log out"
+              aria-label={t("nav.logoutAria")}
               className={`group relative overflow-hidden rounded-none p-3 text-xs font-bold uppercase tracking-[0.22em] transition md:px-6 ${
                 isDusk
                   ? "border border-[#c4934e] bg-[#a9793d] text-white hover:bg-[#8d6432]"
@@ -988,7 +995,7 @@ export default function DashboardPage() {
             >
               <span className="relative z-10 inline-flex items-center md:gap-2">
                 <Logout size={14} />
-                <span className="hidden md:inline">Logout</span>
+                <span className="hidden md:inline">{t("nav.logout")}</span>
               </span>
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
             </button>
@@ -1031,7 +1038,7 @@ export default function DashboardPage() {
                 type="button"
                 disabled={ackDismissing}
                 onClick={() => dismissAcknowledgment(false)}
-                aria-label="Dismiss"
+                aria-label={t("acknowledgment.dismiss")}
                 className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center text-[var(--sh-text-muted)] transition hover:text-[var(--sh-accent-gold)] disabled:opacity-50 md:right-3 md:top-3"
               >
                 <X size={18} aria-hidden="true" />
@@ -1056,7 +1063,7 @@ export default function DashboardPage() {
                     onClick={() => dismissAcknowledgment(true)}
                     className="mt-3 text-[10px] text-[var(--sh-text-tertiary)] underline-offset-4 transition hover:text-[var(--sh-accent-gold)] hover:underline disabled:opacity-50 md:mt-4 md:text-[11px]"
                   >
-                    Don&apos;t show these again
+                    {t("acknowledgment.dontShowAgain")}
                   </button>
                 </div>
               </div>
@@ -1143,7 +1150,7 @@ export default function DashboardPage() {
                   isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
                 }`}
               >
-                Today&apos;s Reflection
+                {t("reflection.eyebrow")}
               </p>
               {dailyQuote ? (
                 <>
@@ -1176,16 +1183,14 @@ export default function DashboardPage() {
                       isDusk ? "text-stone-100" : "text-stone-900"
                     }`}
                   >
-                    Your reflection is being prepared.
+                    {t("reflection.fallbackTitle")}
                   </p>
                   <p
                     className={`mx-auto mt-3 max-w-xl text-xs leading-relaxed ${
                       isDusk ? "text-stone-400" : "text-stone-500"
                     }`}
                   >
-                    No active quote was found for today&apos;s {quoteStage}{" "}
-                    stage. Generate this week&apos;s reflections and refresh
-                    your harbor.
+                    {t("reflection.fallbackBody", { stage: quoteStage })}
                   </p>
                 </>
               )}
@@ -1273,56 +1278,56 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2">
                 <Flame size={14} className="text-[#a9793d]" />
                 <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-                  Streak
+                  {t("strip.streakLabel")}
                 </p>
               </div>
               <p
                 className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
               >
                 {streak === null
-                  ? "—"
+                  ? t("strip.streakNone")
                   : streak === 0
-                    ? "Day zero is still a day."
+                    ? t("strip.streakZero")
                     : streak === 1
-                      ? "Day 1."
-                      : `Day ${streak}.`}
+                      ? t("strip.streakOne")
+                      : t("strip.streakN", { count: streak })}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
                 {streak === 0
-                  ? "Begin when you're ready. The harbor isn't keeping score."
-                  : "Missing a day doesn't reset you."}
+                  ? t("strip.streakSubZero")
+                  : t("strip.streakSubActive")}
               </p>
             </div>,
             // 1 — Tomorrow
             <div key="tomorrow">
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-                Tomorrow
+                {t("strip.tomorrowLabel")}
               </p>
               <p
                 className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
               >
-                A question on {tomorrowsTopic()}.
+                {t("strip.tomorrowTitle", { topic: tomorrowsTopic() })}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
-                Three sentences. That&apos;s all.
+                {t("strip.tomorrowSub")}
               </p>
             </div>,
             // 2 — Brotherhood
             <div key="brotherhood">
               <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[var(--sh-text-tertiary)]">
-                Brotherhood
+                {t("strip.brotherhoodLabel")}
               </p>
               <p
                 className={`${serif.className} mt-2 text-2xl italic text-[var(--sh-text-primary)]`}
               >
                 {dailyReflections === 0
-                  ? "Be the first today."
+                  ? t("strip.brotherhoodZero")
                   : dailyReflections === 1
-                    ? "1 man reflected today."
-                    : `${dailyReflections} men reflected today.`}
+                    ? t("strip.brotherhoodOne")
+                    : t("strip.brotherhoodN", { count: dailyReflections })}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-[var(--sh-text-tertiary)]">
-                You&apos;re not the only one here.
+                {t("strip.brotherhoodSub")}
               </p>
             </div>,
           ];
@@ -1365,7 +1370,7 @@ export default function DashboardPage() {
                       key={i}
                       type="button"
                       onClick={() => setGreetingIndex(i)}
-                      aria-label={`Show card ${i + 1} of ${cells.length}`}
+                      aria-label={t("strip.cardAriaLabel", { index: i + 1, total: cells.length })}
                       className={`h-1 rounded-full transition-all duration-500 ${
                         i === greetingIndex
                           ? "w-5 bg-[var(--sh-accent-gold)]"
@@ -1550,7 +1555,7 @@ export default function DashboardPage() {
                     className={`${serif.className} hidden text-base italic md:inline`}
                     style={{ color: accent }}
                   >
-                    {breathPhase === "inhale" ? "Inhale" : "Exhale"}
+                    {breathPhase === "inhale" ? t("meditation.inhale") : t("meditation.exhale")}
                   </span>
                 </>
               }
@@ -1560,18 +1565,18 @@ export default function DashboardPage() {
                 className="text-[10px] font-bold uppercase tracking-[0.32em]"
                 style={{ color: accent }}
               >
-                Daily Breath · Open Meditation
+                {t("meditation.eyebrow")}
               </p>
               <p
                 className={`${serif.className} mt-1 text-xl italic text-[var(--sh-text-primary)] md:mt-2 md:text-3xl`}
               >
-                Sixty seconds, every morning.
+                {t("meditation.title")}
               </p>
               <p className="mt-1 max-w-md text-xs leading-relaxed text-[var(--sh-text-secondary)] md:mt-2 md:text-sm">
-                One breath at the door of the harbor. Stay as long as you want.
+                {t("meditation.subtitle")}
               </p>
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:mt-3">
-                Enter the Meditation →
+                {t("meditation.cta")}
               </p>
             </div>
           </Link>
@@ -1604,16 +1609,15 @@ export default function DashboardPage() {
               }`}
             >
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] md:mb-4 md:text-xs md:tracking-[0.28em]">
-                Ripples
+                {t("ripples.eyebrow")}
               </p>
               <h2
                 className={`${serif.className} text-xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
               >
-                Share what mattered today.
+                {t("ripples.title")}
               </h2>
               <p className="mt-2 hidden text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-3 md:block">
-                A small word, a hard-won shift, a thought worth setting down.
-                Your ripple reaches others.
+                {t("ripples.subtitle")}
               </p>
               <textarea
                 value={postBody}
@@ -1624,7 +1628,7 @@ export default function DashboardPage() {
                     ? "border border-white/15 bg-black/40 text-stone-100 placeholder:text-white/30 focus:border-[#c4934e]"
                     : "border border-stone-300 bg-[#f8f4ed] text-stone-800 placeholder:text-stone-400 focus:border-[#a9793d]"
                 }`}
-                placeholder="What's the ripple today?"
+                placeholder={t("ripples.placeholder")}
               />
               <select
                 value={postPrivacy}
@@ -1635,8 +1639,8 @@ export default function DashboardPage() {
                     : "border border-stone-300 bg-[#f8f4ed] text-stone-800 focus:border-[#a9793d]"
                 }`}
               >
-                <option value="members">Members only</option>
-                <option value="private">Private</option>
+                <option value="members">{t("ripples.privacyMembers")}</option>
+                <option value="private">{t("ripples.privacyPrivate")}</option>
               </select>
               <button
                 type="submit"
@@ -1644,7 +1648,7 @@ export default function DashboardPage() {
                 className="group relative mt-3 w-full overflow-hidden rounded-none border border-[#c4934e] bg-[#a9793d] px-6 py-3 text-xs font-bold uppercase tracking-[0.22em] text-white transition hover:bg-[#8d6432] disabled:opacity-60 md:mt-5 md:px-8 md:py-4 md:text-sm"
               >
                 <span className="relative z-10">
-                  {posting ? "Sharing…" : "Share"}
+                  {posting ? t("ripples.sharing") : t("ripples.share")}
                 </span>
               </button>
             </form>
@@ -1658,12 +1662,12 @@ export default function DashboardPage() {
               <div className="mb-4 flex items-end justify-between gap-3 md:mb-6 md:gap-4">
                 <div>
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.26em] text-[var(--sh-accent-gold)] md:mb-3 md:text-xs md:tracking-[0.28em]">
-                    Recent Ripples
+                    {t("ripples.recentEyebrow")}
                   </p>
                   <h2
                     className={`${serif.className} text-xl font-medium text-[var(--sh-text-primary)] md:text-4xl`}
                   >
-                    Today on the water.
+                    {t("ripples.recentTitle")}
                   </h2>
                 </div>
                 <button
@@ -1675,7 +1679,7 @@ export default function DashboardPage() {
                       : "border border-stone-300 bg-[#f8f4ed] text-stone-600 hover:border-[#a9793d]"
                   }`}
                 >
-                  Refresh
+                  {t("ripples.refresh")}
                 </button>
               </div>
               {memberPosts.length === 0 ? (
@@ -1689,10 +1693,10 @@ export default function DashboardPage() {
                   <p
                     className={`${serif.className} text-lg md:text-xl`}
                   >
-                    The water is still.
+                    {t("ripples.emptyTitle")}
                   </p>
                   <p className="mt-2 text-xs leading-relaxed md:text-sm">
-                    Be the first ripple today.
+                    {t("ripples.emptySub")}
                   </p>
                 </div>
               ) : (
@@ -1718,7 +1722,7 @@ export default function DashboardPage() {
                             {post.profiles?.avatar_url ? (
                               <img
                                 src={post.profiles.avatar_url}
-                                alt="Member avatar"
+                                alt={t("ripples.postMemberAlt")}
                                 className="h-full w-full object-cover"
                               />
                             ) : (
@@ -1733,13 +1737,13 @@ export default function DashboardPage() {
                             <p className="text-sm font-bold text-[var(--sh-text-primary)] md:text-base">
                               {post.profiles?.display_name ||
                                 post.profiles?.username ||
-                                "Stone Harbor Member"}
+                                t("ripples.postMemberFallback")}
                             </p>
                             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--sh-text-muted)] md:text-xs md:tracking-[0.18em]">
                               {formatPostDate(post.created_at)} ·{" "}
                               {post.privacy_level === "private"
-                                ? "Private"
-                                : "Members"}
+                                ? t("ripples.postPrivateLabel")
+                                : t("ripples.postMembersLabel")}
                             </p>
                           </div>
                         </div>
@@ -1747,7 +1751,7 @@ export default function DashboardPage() {
                           <button
                             type="button"
                             onClick={() => deleteMemberPost(post.id)}
-                            aria-label="Delete post"
+                            aria-label={t("ripples.deleteAria")}
                             className={`rounded-none p-2 transition hover:border-red-300 hover:text-red-500 md:px-4 md:py-2 ${
                               isDusk
                                 ? "border border-white/15 text-stone-400"
@@ -1756,7 +1760,7 @@ export default function DashboardPage() {
                           >
                             <X size={14} className="md:hidden" aria-hidden="true" />
                             <span className="hidden text-xs font-bold uppercase tracking-[0.18em] md:inline">
-                              Delete
+                              {t("ripples.delete")}
                             </span>
                           </button>
                         )}
@@ -1928,39 +1932,39 @@ export default function DashboardPage() {
                   on desktop only (mobile keeps the focus to four). */}
               <DashboardCard
                 href="/journal"
-                label="Private"
-                title="Reflect"
-                text="Write, search, and revisit private reflections only you can access."
+                label={t("doors.reflect.label")}
+                title={t("doors.reflect.title")}
+                text={t("doors.reflect.text")}
                 Icon={EditIcon}
               />
               <DashboardCard
                 href="/vent"
-                label="Release"
-                title="Vent"
-                text="A blank page, no prompts, no audience. For when you just need to put it down."
+                label={t("doors.vent.label")}
+                title={t("doors.vent.title")}
+                text={t("doors.vent.text")}
                 Icon={Heart}
               />
               <DashboardCard
                 href="/messages"
                 label={
                   unreadMessageCount > 0
-                    ? `${unreadMessageCount} Unread`
-                    : "Together"
+                    ? t("doors.brotherhood.labelUnread", { count: unreadMessageCount })
+                    : t("doors.brotherhood.label")
                 }
-                title="Brotherhood"
+                title={t("doors.brotherhood.title")}
                 text={
                   unreadMessageCount > 0
-                    ? "You have unread member messages waiting."
-                    : "Step into the brotherhood. You're not the only one here."
+                    ? t("doors.brotherhood.textUnread")
+                    : t("doors.brotherhood.text")
                 }
                 badge={unreadMessageCount}
                 Icon={Users}
               />
               <DashboardCard
                 href="/meditation"
-                label="Sixty seconds"
-                title="Breathe"
-                text="One breath at the door of the harbor. Stay as long as you want."
+                label={t("doors.breathe.label")}
+                title={t("doors.breathe.title")}
+                text={t("doors.breathe.text")}
                 Icon={Wind}
               />
             </div>
@@ -1987,7 +1991,7 @@ export default function DashboardPage() {
                   isDusk ? "text-white/80" : "text-stone-500"
                 }`}
               >
-                The harbor will be here tomorrow.
+                {t("patience")}
               </p>
             </div>
 
@@ -2002,16 +2006,16 @@ export default function DashboardPage() {
             <div className="mt-3 hide-scrollbar mb-12 flex gap-3 overflow-x-auto pr-8 snap-x snap-mandatory md:mt-6 md:mb-20 md:grid md:grid-cols-2 md:gap-6 md:overflow-visible md:pr-0">
               <DashboardCard
                 href="/members-blog"
-                label="Read"
-                title="The Library"
-                text="Long-form pieces from the team. The thinking the harbor returns to, written in the voice of someone who knows."
+                label={t("doors.library.label")}
+                title={t("doors.library.title")}
+                text={t("doors.library.text")}
                 Icon={Newspaper}
               />
               <DashboardCard
                 href="/resources"
-                label="Curated"
-                title="Resources"
-                text="External reading the team has read first — books, essays, talks worth carrying with you between sessions."
+                label={t("doors.resources.label")}
+                title={t("doors.resources.title")}
+                text={t("doors.resources.text")}
                 Icon={Compass}
               />
             </div>
@@ -2029,17 +2033,17 @@ export default function DashboardPage() {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.6 }}
             className="mt-6 md:hidden"
-            aria-label="Recent brotherhood whispers"
+            aria-label={t("whispers.ariaLabel")}
           >
             <div className="mb-3 flex items-end justify-between">
               <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--sh-accent-gold)]">
-                Today&apos;s Ripples
+                {t("whispers.eyebrow")}
               </p>
               <Link
                 href="/messages"
                 className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--sh-text-tertiary)] transition hover:text-[var(--sh-accent-gold)]"
               >
-                Step further in →
+                {t("whispers.stepFurther")}
               </Link>
             </div>
             <div className="space-y-2.5">
@@ -2077,7 +2081,7 @@ export default function DashboardPage() {
                     <p className="text-[11px] font-bold text-[var(--sh-text-primary)]">
                       {post.profiles?.display_name ||
                         post.profiles?.username ||
-                        "A brother"}
+                        t("whispers.brotherFallback")}
                     </p>
                     <p className="text-[10px] uppercase tracking-[0.18em] text-[var(--sh-text-muted)]">
                       · {formatPostDate(post.created_at)}
@@ -2120,22 +2124,22 @@ export default function DashboardPage() {
               >
                 <Roadmap size={14} className="md:size-4" />
                 <p className="text-[10px] font-bold uppercase tracking-[0.26em] md:text-xs md:tracking-[0.3em]">
-                  Your Roadmap
+                  {t("roadmap.eyebrow")}
                 </p>
               </div>
               <h2
                 className={`${serif.className} mt-2 text-2xl font-medium text-[var(--sh-text-primary)] md:mt-3 md:text-5xl`}
               >
-                Pick up where you left off.
+                {t("roadmap.title")}
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--sh-text-secondary)] md:mt-4 md:text-base">
                 {roadmapProgress === null ? (
-                  <>Loading your roadmap…</>
+                  <>{t("roadmap.loading")}</>
                 ) : roadmapProgress.total_steps === 0 ? (
-                  <>No steps in the {stage} path yet. Check back soon.</>
+                  <>{t("roadmap.noSteps", { stage })}</>
                 ) : roadmapProgress.completed_steps === 0 ? (
                   <>
-                    You haven&apos;t started the {stage} path yet. Begin with:{" "}
+                    {t("roadmap.notStarted", { stage })}{" "}
                     <span
                       className={`${serif.className} italic`}
                       style={{ color: accent }}
@@ -2144,17 +2148,14 @@ export default function DashboardPage() {
                     </span>
                   </>
                 ) : roadmapProgress.next_step_title === null ? (
-                  <>
-                    You&apos;ve completed the {stage} path. Time to set the next
-                    intention.
-                  </>
+                  <>{t("roadmap.completed", { stage })}</>
                 ) : (
                   <>
-                    You&apos;re{" "}
+                    {t("roadmap.progressPrefix")}{" "}
                     <span className="font-bold">
-                      {roadmapProgress.percent}% through
+                      {t("roadmap.progressPercent", { percent: roadmapProgress.percent })}
                     </span>{" "}
-                    the {stage} path. Next:{" "}
+                    {t("roadmap.progressSuffix", { stage })}{" "}
                     <span
                       className={`${serif.className} italic`}
                       style={{ color: accent }}
@@ -2184,7 +2185,7 @@ export default function DashboardPage() {
                 className="group relative inline-block overflow-hidden rounded-none border px-6 py-3 text-xs font-bold uppercase tracking-[0.2em] text-white transition hover:scale-105 md:px-8 md:py-4 md:text-sm md:tracking-[0.22em]"
                 style={{ backgroundColor: accent, borderColor: accent }}
               >
-                <span className="relative z-10">Continue Your Path</span>
+                <span className="relative z-10">{t("roadmap.cta")}</span>
               </Link>
             </div>
           </div>
@@ -2267,7 +2268,7 @@ export default function DashboardPage() {
         open={ripplesUnsaved.showModal}
         onStay={ripplesUnsaved.cancelNavigation}
         onLeave={ripplesUnsaved.confirmNavigation}
-        bodyLabel="your ripple"
+        bodyLabel={t("ripples.unsavedBody")}
       />
     </main>
   );
@@ -2289,39 +2290,36 @@ function NotificationCard({
   notification: Notification;
   onDismiss: () => void;
 }) {
+  const t = useTranslations("dashboard.notification");
   const { kind, payload } = notification;
 
-  let eyebrow = "Notice";
-  let headline = "Something arrived.";
+  let eyebrow = t("fallbackEyebrow");
+  let headline = t("fallbackHeadline");
   let body = "";
   let borderColor = "#a9793d";
 
   if (kind === "solidarity_threshold") {
     const count = Number(payload.count ?? 0);
-    eyebrow = "Brothers Are With You";
+    eyebrow = t("solidarity.eyebrow");
     borderColor = "#a9793d";
     if (count === 1) {
-      headline = "1 brother is with you on that post.";
-      body =
-        "Someone read what you wrote and dropped anchor next to you. You are not the only one in this.";
+      headline = t("solidarity.headline1");
+      body = t("solidarity.body1");
     } else if (count === 5) {
-      headline = "5 brothers are with you.";
-      body = "Five men saw it. Five men answered with their silent presence.";
+      headline = t("solidarity.headline5");
+      body = t("solidarity.body5");
     } else if (count === 25) {
-      headline = "25 brothers are with you.";
-      body =
-        "You wrote something brave today. Twenty-five men felt it enough to say so without words.";
+      headline = t("solidarity.headline25");
+      body = t("solidarity.body25");
     } else if (count === 50) {
-      headline = "50 brothers are with you.";
-      body =
-        "Half a hundred men dropped anchor next to your post. The harbor is not a metaphor right now.";
+      headline = t("solidarity.headline50");
+      body = t("solidarity.body50");
     } else if (count === 100) {
-      headline = "100 brothers are with you.";
-      body =
-        "One hundred men. That number is not nothing. Whatever you wrote, it reached.";
+      headline = t("solidarity.headline100");
+      body = t("solidarity.body100");
     } else {
-      headline = `${count} brothers are with you.`;
-      body = "Your post is being held.";
+      headline = t("solidarity.headlineN", { count });
+      body = t("solidarity.bodyN");
     }
   } else if (kind === "daily_solidarity_summary") {
     const distinct = Number(payload.distinct_brothers ?? 0);
@@ -2332,26 +2330,24 @@ function NotificationCard({
           month: "short",
           day: "numeric",
         })
-      : "yesterday";
-    eyebrow = "Yesterday";
+      : t("summary.fallbackDate");
+    eyebrow = t("summary.eyebrow");
     borderColor = "#586558"; // moss for daily roll-ups
     headline =
       distinct === 1
-        ? `1 brother was with you on ${dateStr}.`
-        : `${distinct} brothers were with you on ${dateStr}.`;
-    body =
-      "We thought you should know — quietly. The harbor was holding what you wrote.";
+        ? t("summary.headline1", { date: dateStr })
+        : t("summary.headlineN", { count: distinct, date: dateStr });
+    body = t("summary.body");
   } else if (kind === "warning_issued") {
-    eyebrow = "Important";
+    eyebrow = t("warning.eyebrow");
     borderColor = "#b14a3a";
-    headline = "A moderation note is on your account.";
-    body =
-      "Please review the warning in your profile settings. If you believe it is in error, you can appeal.";
+    headline = t("warning.headline");
+    body = t("warning.body");
   } else if (kind === "suspension_lifted") {
-    eyebrow = "Welcome Back";
+    eyebrow = t("suspension.eyebrow");
     borderColor = "#586558";
-    headline = "Your account is active again.";
-    body = "We're glad you're here. The harbor is open.";
+    headline = t("suspension.headline");
+    body = t("suspension.body");
   }
 
   return (
@@ -2387,7 +2383,7 @@ function NotificationCard({
           onClick={onDismiss}
           className="shrink-0 self-start border border-stone-300 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-stone-500 transition hover:border-[#a9793d] hover:text-[#a9793d]"
         >
-          Dismiss
+          {t("dismiss")}
         </button>
       </div>
     </motion.div>
@@ -2417,12 +2413,13 @@ function WithYouButton({
   isOwnPost: boolean;
   onClick: () => void;
 }) {
+  const t = useTranslations("dashboard.withYou");
   // A man cannot be with himself. Show a soft "you posted this" label
   // in place of the button, so the layout doesn't shift.
   if (isOwnPost) {
     return (
       <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-stone-400">
-        Your Post
+        {t("yourPost")}
       </span>
     );
   }
@@ -2430,11 +2427,7 @@ function WithYouButton({
     <button
       type="button"
       onClick={onClick}
-      title={
-        isWith
-          ? "You are with him. Tap to lift the anchor."
-          : "I am with you, brother. Drop anchor next to him."
-      }
+      title={isWith ? t("withTitle") : t("withoutTitle")}
       className={`inline-flex items-center gap-2 rounded-none border px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] transition ${
         isWith
           ? "border-[#a9793d] bg-[#a9793d] text-white shadow-[0_4px_14px_rgba(169,121,61,0.35)]"
@@ -2446,7 +2439,7 @@ function WithYouButton({
         strokeWidth={isWith ? 1.7 : 1.5}
         className={isWith ? "text-white" : "text-[#a9793d]"}
       />
-      {isWith ? "With Him" : "I'm With You"}
+      {isWith ? t("withLabel") : t("withoutLabel")}
     </button>
   );
 }
@@ -2458,6 +2451,7 @@ function WithYouCount({
   count: number;
   isPoster: boolean;
 }) {
+  const t = useTranslations("dashboard.withYou");
   if (count === 0) {
     // Don't show a "0 brothers" line — that's worse than silence.
     return <span className="text-[11px] text-stone-300">·</span>;
@@ -2467,15 +2461,15 @@ function WithYouCount({
     return (
       <span className={`${serif.className} text-base italic text-[#a9793d]`}>
         {count === 1
-          ? "1 brother is with you."
-          : `${count} brothers are with you.`}
+          ? t("posterCount1")
+          : t("posterCountN", { count })}
       </span>
     );
   }
   // Quieter, factual message for everyone else viewing the post.
   return (
     <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
-      {count === 1 ? "1 with him" : `${count} with him`}
+      {count === 1 ? t("viewerCount1") : t("viewerCountN", { count })}
     </span>
   );
 }
@@ -2538,6 +2532,7 @@ function DashboardCard({
 }: DashboardCardProps) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
+  const t = useTranslations("dashboard.doors");
 
   return (
     <Link
@@ -2607,7 +2602,7 @@ function DashboardCard({
           description needed (which previously expanded short-text
           cards into viewport-tall blocks). */}
       <p className="mt-auto pt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--sh-text-muted)] transition group-hover:text-[var(--sh-accent-gold)] md:pt-4">
-        Open →
+        {t("openCta")}
       </p>
       <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#c4934e] transition-all duration-500 group-hover:w-full" />
     </Link>

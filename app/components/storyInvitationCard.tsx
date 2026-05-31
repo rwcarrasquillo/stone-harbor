@@ -27,6 +27,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 
 import { supabase } from "@/lib/supabaseClient";
 import { serif } from "@/lib/fonts";
@@ -57,6 +58,7 @@ type CardState =
 export function StoryInvitationCard({ userId, userEmail }: Props) {
   const { theme } = useTheme();
   const isDusk = theme === "dusk";
+  const t = useTranslations("dashboard.storyCard");
 
   const [state, setState] = useState<CardState>({ kind: "loading" });
   const [skipping, setSkipping] = useState(false);
@@ -212,7 +214,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
               isDusk ? "text-[#c4934e]" : "text-[#a9793d]"
             }`}
           >
-            A Story to Tell
+            {t("eyebrow")}
           </p>
 
           <p
@@ -229,7 +231,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
                 isDusk ? "text-stone-400" : "text-stone-500"
               }`}
             >
-              About {prompt.est_minutes} minutes
+              {t("estMinutes", { minutes: prompt.est_minutes })}
             </p>
           ) : null}
 
@@ -242,7 +244,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
                   : "border-[#a9793d] bg-[#a9793d] text-stone-50 hover:bg-[#8a6230]"
               }`}
             >
-              Write this story
+              {t("writeStory")}
             </Link>
 
             <button
@@ -255,7 +257,7 @@ export function StoryInvitationCard({ userId, userEmail }: Props) {
                   : "border-stone-400 bg-transparent text-stone-700 hover:bg-stone-100 disabled:opacity-50"
               }`}
             >
-              {skipping ? "One moment…" : "Not today"}
+              {skipping ? t("oneMoment") : t("notToday")}
             </button>
           </div>
         </div>

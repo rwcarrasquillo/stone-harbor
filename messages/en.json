@@ -222,58 +222,224 @@
     }
   },
   "dashboard": {
-    "eyebrow": "Today at the harbor",
-    "welcome": "Welcome",
-    "welcomeBack": "Welcome back",
-    "doors": {
-      "reflect": "Reflect",
-      "reflectSub": "A quiet moment with yourself",
-      "journal": "Journal",
-      "journalSub": "Write what's true today",
-      "breath": "Daily Breath",
-      "breathSub": "Sixty seconds. One breath.",
-      "messages": "Brotherhood",
-      "messagesSub": "Quiet, asynchronous company",
-      "members": "Reading",
-      "membersSub": "The library",
-      "resources": "Resources",
-      "resourcesSub": "What the team has read first",
-      "map": "The Map",
-      "mapSub": "How you are wired",
-      "manual": "Operating Manual",
-      "manualSub": "Read your chapter",
-      "vent": "Vent",
-      "ventSub": "A place to dump it"
+    "loading": "Returning to your harbor…",
+    "nav": {
+      "backToHome": "← Stone Harbor",
+      "tagline": "Men's Mental Wellness",
+      "editProfile": "Edit Profile",
+      "editProfileAria": "Edit profile",
+      "messages": "Messages",
+      "messagesAria": "Messages",
+      "logout": "Logout",
+      "logoutAria": "Log out"
+    },
+    "acknowledgment": {
+      "dismiss": "Dismiss",
+      "dontShowAgain": "Don't show these again"
     },
     "reflection": {
-      "title": "How are you arriving today?",
-      "subtitle": "One sentence is enough. Or skip — the harbor waits.",
-      "moodLabel": "Mood",
-      "placeholder": "Today I feel…",
-      "save": "Save reflection",
-      "saving": "Saving…",
-      "saved": "Saved",
-      "skip": "Skip for now"
+      "eyebrow": "Today's Reflection",
+      "fallbackTitle": "Your reflection is being prepared.",
+      "fallbackBody": "No active quote was found for today's {stage} stage. Generate this week's reflections and refresh your harbor."
     },
     "strip": {
-      "smallThing": "A small thing",
-      "smallThingSub": "Something gentle for today",
-      "ripples": "Ripples",
-      "ripplesSub": "Echoes from yesterday",
-      "anchor": "Anchor",
-      "anchorSub": "Where you are right now"
+      "streakLabel": "Streak",
+      "streakNone": "—",
+      "streakZero": "Day zero is still a day.",
+      "streakOne": "Day 1.",
+      "streakN": "Day {count}.",
+      "streakSubZero": "Begin when you're ready. The harbor isn't keeping score.",
+      "streakSubActive": "Missing a day doesn't reset you.",
+      "tomorrowLabel": "Tomorrow",
+      "tomorrowTitle": "A question on {topic}.",
+      "tomorrowSub": "Three sentences. That's all.",
+      "brotherhoodLabel": "Brotherhood",
+      "brotherhoodZero": "Be the first today.",
+      "brotherhoodOne": "1 man reflected today.",
+      "brotherhoodN": "{count} men reflected today.",
+      "brotherhoodSub": "You're not the only one here.",
+      "cardAriaLabel": "Show card {index} of {total}"
     },
-    "streak": {
-      "label": "Streak",
-      "days": "{count} days",
-      "today": "Today"
+    "meditation": {
+      "eyebrow": "Daily Breath · Open Meditation",
+      "title": "Sixty seconds, every morning.",
+      "subtitle": "One breath at the door of the harbor. Stay as long as you want.",
+      "cta": "Enter the Meditation →",
+      "inhale": "Inhale",
+      "exhale": "Exhale"
     },
-    "today": {
-      "label": "Today's prompt",
-      "writeAbout": "Write about this →"
+    "ripples": {
+      "eyebrow": "Ripples",
+      "title": "Share what mattered today.",
+      "subtitle": "A small word, a hard-won shift, a thought worth setting down. Your ripple reaches others.",
+      "placeholder": "What's the ripple today?",
+      "privacyMembers": "Members only",
+      "privacyPrivate": "Private",
+      "share": "Share",
+      "sharing": "Sharing…",
+      "recentEyebrow": "Recent Ripples",
+      "recentTitle": "Today on the water.",
+      "refresh": "Refresh",
+      "emptyTitle": "The water is still.",
+      "emptySub": "Be the first ripple today.",
+      "postMembersLabel": "Members",
+      "postPrivateLabel": "Private",
+      "postMemberFallback": "Stone Harbor Member",
+      "postMemberAlt": "Member avatar",
+      "delete": "Delete",
+      "deleteAria": "Delete post",
+      "unsavedBody": "your ripple"
     },
-    "footerNote": "The harbor is patient.",
-    "yourPath": "Your path: {pillar}"
+    "whispers": {
+      "eyebrow": "Today's Ripples",
+      "stepFurther": "Step further in →",
+      "brotherFallback": "A brother",
+      "ariaLabel": "Recent brotherhood whispers"
+    },
+    "doors": {
+      "openCta": "Open →",
+      "reflect": {
+        "label": "Private",
+        "title": "Reflect",
+        "text": "Write, search, and revisit private reflections only you can access."
+      },
+      "vent": {
+        "label": "Release",
+        "title": "Vent",
+        "text": "A blank page, no prompts, no audience. For when you just need to put it down."
+      },
+      "brotherhood": {
+        "label": "Together",
+        "labelUnread": "{count} Unread",
+        "title": "Brotherhood",
+        "text": "Step into the brotherhood. You're not the only one here.",
+        "textUnread": "You have unread member messages waiting."
+      },
+      "breathe": {
+        "label": "Sixty seconds",
+        "title": "Breathe",
+        "text": "One breath at the door of the harbor. Stay as long as you want."
+      },
+      "library": {
+        "label": "Read",
+        "title": "The Library",
+        "text": "Long-form pieces from the team. The thinking the harbor returns to, written in the voice of someone who knows."
+      },
+      "resources": {
+        "label": "Curated",
+        "title": "Resources",
+        "text": "External reading the team has read first — books, essays, talks worth carrying with you between sessions."
+      }
+    },
+    "patience": "The harbor will be here tomorrow.",
+    "roadmap": {
+      "eyebrow": "Your Roadmap",
+      "title": "Pick up where you left off.",
+      "loading": "Loading your roadmap…",
+      "noSteps": "No steps in the {stage} path yet. Check back soon.",
+      "notStarted": "You haven't started the {stage} path yet. Begin with:",
+      "completed": "You've completed the {stage} path. Time to set the next intention.",
+      "progressPrefix": "You're",
+      "progressPercent": "{percent}% through",
+      "progressSuffix": "the {stage} path. Next:",
+      "cta": "Continue Your Path"
+    },
+    "notification": {
+      "fallbackEyebrow": "Notice",
+      "fallbackHeadline": "Something arrived.",
+      "dismiss": "Dismiss",
+      "solidarity": {
+        "eyebrow": "Brothers Are With You",
+        "headline1": "1 brother is with you on that post.",
+        "body1": "Someone read what you wrote and dropped anchor next to you. You are not the only one in this.",
+        "headline5": "5 brothers are with you.",
+        "body5": "Five men saw it. Five men answered with their silent presence.",
+        "headline25": "25 brothers are with you.",
+        "body25": "You wrote something brave today. Twenty-five men felt it enough to say so without words.",
+        "headline50": "50 brothers are with you.",
+        "body50": "Half a hundred men dropped anchor next to your post. The harbor is not a metaphor right now.",
+        "headline100": "100 brothers are with you.",
+        "body100": "One hundred men. That number is not nothing. Whatever you wrote, it reached.",
+        "headlineN": "{count} brothers are with you.",
+        "bodyN": "Your post is being held."
+      },
+      "summary": {
+        "eyebrow": "Yesterday",
+        "headline1": "1 brother was with you on {date}.",
+        "headlineN": "{count} brothers were with you on {date}.",
+        "body": "We thought you should know — quietly. The harbor was holding what you wrote.",
+        "fallbackDate": "yesterday"
+      },
+      "warning": {
+        "eyebrow": "Important",
+        "headline": "A moderation note is on your account.",
+        "body": "Please review the warning in your profile settings. If you believe it is in error, you can appeal."
+      },
+      "suspension": {
+        "eyebrow": "Welcome Back",
+        "headline": "Your account is active again.",
+        "body": "We're glad you're here. The harbor is open."
+      }
+    },
+    "withYou": {
+      "yourPost": "Your Post",
+      "withTitle": "You are with him. Tap to lift the anchor.",
+      "withoutTitle": "I am with you, brother. Drop anchor next to him.",
+      "withLabel": "With Him",
+      "withoutLabel": "I'm With You",
+      "posterCount1": "1 brother is with you.",
+      "posterCountN": "{count} brothers are with you.",
+      "viewerCount1": "1 with him",
+      "viewerCountN": "{count} with him"
+    },
+    "personalizedGreeting": {
+      "fallbackName": "friend",
+      "defaultSalutation": "Welcome.",
+      "defaultBody": "The harbor is patient.",
+      "ariaLabel": "Welcome",
+      "firstVisit": {
+        "lateNightSalutation": "It's late, {name}.",
+        "lateNightBody": "The harbor is here. Take your time.",
+        "salutation": "{greeting}, {name}.",
+        "body": "The harbor remembers you. You don't owe anyone anything today."
+      },
+      "longGone": {
+        "salutation": "Welcome back, {name}.",
+        "body": "We were patient. Begin where you are — not where you left off."
+      },
+      "fewDays": {
+        "salutation": "Welcome back, {name}.",
+        "body": "A few days since you've been here. Whatever happened in between — you're welcome to return."
+      },
+      "recent": {
+        "lateNightSalutation": "It's late, {name}.",
+        "lateNightBody": "The harbor is here.",
+        "salutation": "{greeting}, {name}.",
+        "body": "Good to see you again."
+      },
+      "greetings": {
+        "morning": "Good morning",
+        "afternoon": "Good afternoon",
+        "evening": "Good evening"
+      }
+    },
+    "todayIntention": {
+      "eyebrow": "Today",
+      "prompts": {
+        "0": "What needs your attention today?",
+        "1": "What would feel like progress?",
+        "2": "What would feel like rest?"
+      },
+      "ariaLabel": "Today's intention",
+      "inputAriaLabel": "Set one intention for today (optional)"
+    },
+    "storyCard": {
+      "eyebrow": "A Story to Tell",
+      "estMinutes": "About {minutes} minutes",
+      "writeStory": "Write this story",
+      "notToday": "Not today",
+      "oneMoment": "One moment…"
+    }
   },
   "journal": {
     "loading": "Opening your journal…",

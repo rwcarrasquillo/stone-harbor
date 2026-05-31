@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 /**
  * Stone Harbor — TodayIntention.
@@ -38,17 +39,16 @@ type Props = {
   userId?: string | null;
 };
 
-const PROMPTS = [
-  "What needs your attention today?",
-  "What would feel like progress?",
-  "What would feel like rest?",
-];
+// Three prompt keys that rotate behind the input. Strings live in
+// `dashboard.todayIntention.prompts.*` so the rotation stays locale-aware.
+const PROMPT_KEYS = ["0", "1", "2"] as const;
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
 export function TodayIntention({ userId }: Props) {
+  const t = useTranslations("dashboard.todayIntention");
   const [value, setValue] = useState("");
   const [promptIndex, setPromptIndex] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,7 +68,7 @@ export function TodayIntention({ userId }: Props) {
   // Rotate the placeholder slowly so the field doesn't feel static.
   useEffect(() => {
     const id = setInterval(
-      () => setPromptIndex((i) => (i + 1) % PROMPTS.length),
+      () => setPromptIndex((i) => (i + 1) % PROMPT_KEYS.length),
       6000,
     );
     return () => clearInterval(id);
@@ -99,19 +99,19 @@ export function TodayIntention({ userId }: Props) {
 
   return (
     <section
-      aria-label="Today's intention"
+      aria-label={t("ariaLabel")}
       className="mb-6 md:mb-10"
     >
       <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--sh-accent-gold)] md:tracking-[0.32em]">
-        Today
+        {t("eyebrow")}
       </p>
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
-        placeholder={PROMPTS[promptIndex]}
-        aria-label="Set one intention for today (optional)"
+        placeholder={t(`prompts.${PROMPT_KEYS[promptIndex]}`)}
+        aria-label={t("inputAriaLabel")}
         maxLength={140}
         className="w-full border-b border-[var(--sh-border-medium)] bg-transparent pb-2 text-base italic leading-relaxed text-[var(--sh-text-primary)] outline-none transition placeholder:font-normal placeholder:not-italic placeholder:text-[var(--sh-text-muted)] focus:border-[var(--sh-accent-gold)] md:text-lg"
       />
