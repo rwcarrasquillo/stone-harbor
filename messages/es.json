@@ -222,58 +222,224 @@
     }
   },
   "dashboard": {
-    "eyebrow": "Hoy en el puerto",
-    "welcome": "Bienvenido",
-    "welcomeBack": "Bienvenido de nuevo",
-    "doors": {
-      "reflect": "Reflexiona",
-      "reflectSub": "Un momento contigo mismo",
-      "journal": "Diario",
-      "journalSub": "Escribe lo que es cierto hoy",
-      "breath": "Respiración Diaria",
-      "breathSub": "Sesenta segundos. Una respiración.",
-      "messages": "Hermandad",
-      "messagesSub": "Compañía silenciosa y sin prisa",
-      "members": "Lectura",
-      "membersSub": "La biblioteca",
-      "resources": "Recursos",
-      "resourcesSub": "Lo que el equipo ha leído primero",
-      "map": "El Mapa",
-      "mapSub": "Cómo estás construido",
-      "manual": "Manual de Operación",
-      "manualSub": "Lee tu capítulo",
-      "vent": "Desahogo",
-      "ventSub": "Un lugar para descargarlo"
+    "loading": "Regresando a tu puerto…",
+    "nav": {
+      "backToHome": "← Stone Harbor",
+      "tagline": "Bienestar Mental Para Hombres",
+      "editProfile": "Editar Perfil",
+      "editProfileAria": "Editar perfil",
+      "messages": "Mensajes",
+      "messagesAria": "Mensajes",
+      "logout": "Cerrar Sesión",
+      "logoutAria": "Cerrar sesión"
+    },
+    "acknowledgment": {
+      "dismiss": "Descartar",
+      "dontShowAgain": "No mostrar de nuevo"
     },
     "reflection": {
-      "title": "¿Cómo llegas hoy?",
-      "subtitle": "Una oración es suficiente. O sáltatelo — el puerto espera.",
-      "moodLabel": "Estado de ánimo",
-      "placeholder": "Hoy me siento…",
-      "save": "Guardar reflexión",
-      "saving": "Guardando…",
-      "saved": "Guardado",
-      "skip": "Sáltatelo por ahora"
+      "eyebrow": "Reflexión De Hoy",
+      "fallbackTitle": "Tu reflexión se está preparando.",
+      "fallbackBody": "No se encontró una cita activa para la etapa {stage} de hoy. Genera las reflexiones de esta semana y refresca tu puerto."
     },
     "strip": {
-      "smallThing": "Algo pequeño",
-      "smallThingSub": "Algo suave para hoy",
-      "ripples": "Ecos",
-      "ripplesSub": "Resonancias de ayer",
-      "anchor": "Ancla",
-      "anchorSub": "Dónde estás ahora mismo"
+      "streakLabel": "Racha",
+      "streakNone": "—",
+      "streakZero": "El día cero también es un día.",
+      "streakOne": "Día 1.",
+      "streakN": "Día {count}.",
+      "streakSubZero": "Empieza cuando estés listo. El puerto no lleva la cuenta.",
+      "streakSubActive": "Perderse un día no te reinicia.",
+      "tomorrowLabel": "Mañana",
+      "tomorrowTitle": "Una pregunta sobre {topic}.",
+      "tomorrowSub": "Tres oraciones. Eso es todo.",
+      "brotherhoodLabel": "Hermandad",
+      "brotherhoodZero": "Sé el primero hoy.",
+      "brotherhoodOne": "1 hombre reflexionó hoy.",
+      "brotherhoodN": "{count} hombres reflexionaron hoy.",
+      "brotherhoodSub": "No eres el único aquí.",
+      "cardAriaLabel": "Mostrar tarjeta {index} de {total}"
     },
-    "streak": {
-      "label": "Racha",
-      "days": "{count} días",
-      "today": "Hoy"
+    "meditation": {
+      "eyebrow": "Respiración Diaria · Abrir Meditación",
+      "title": "Sesenta segundos, cada mañana.",
+      "subtitle": "Una respiración en la puerta del puerto. Quédate todo el tiempo que quieras.",
+      "cta": "Entrar A La Meditación →",
+      "inhale": "Inhala",
+      "exhale": "Exhala"
     },
-    "today": {
-      "label": "Prompt de hoy",
-      "writeAbout": "Escribe sobre esto →"
+    "ripples": {
+      "eyebrow": "Ecos",
+      "title": "Comparte lo que importó hoy.",
+      "subtitle": "Una palabra pequeña, un cambio difícil de ganar, un pensamiento que vale la pena dejar. Tu eco llega a otros.",
+      "placeholder": "¿Cuál es el eco de hoy?",
+      "privacyMembers": "Solo miembros",
+      "privacyPrivate": "Privado",
+      "share": "Compartir",
+      "sharing": "Compartiendo…",
+      "recentEyebrow": "Ecos Recientes",
+      "recentTitle": "Hoy en el agua.",
+      "refresh": "Actualizar",
+      "emptyTitle": "El agua está quieta.",
+      "emptySub": "Sé el primer eco hoy.",
+      "postMembersLabel": "Miembros",
+      "postPrivateLabel": "Privado",
+      "postMemberFallback": "Miembro De Stone Harbor",
+      "postMemberAlt": "Avatar de miembro",
+      "delete": "Eliminar",
+      "deleteAria": "Eliminar publicación",
+      "unsavedBody": "tu eco"
     },
-    "footerNote": "El puerto es paciente.",
-    "yourPath": "Tu camino: {pillar}"
+    "whispers": {
+      "eyebrow": "Ecos De Hoy",
+      "stepFurther": "Pasa más adentro →",
+      "brotherFallback": "Un hermano",
+      "ariaLabel": "Susurros recientes de la hermandad"
+    },
+    "doors": {
+      "openCta": "Abrir →",
+      "reflect": {
+        "label": "Privado",
+        "title": "Reflexionar",
+        "text": "Escribe, busca y revisa reflexiones privadas que solo tú puedes ver."
+      },
+      "vent": {
+        "label": "Soltar",
+        "title": "Desahogo",
+        "text": "Una página en blanco, sin prompts, sin audiencia. Para cuando solo necesitas soltarlo."
+      },
+      "brotherhood": {
+        "label": "Juntos",
+        "labelUnread": "{count} Sin leer",
+        "title": "Hermandad",
+        "text": "Entra en la hermandad. No eres el único aquí.",
+        "textUnread": "Tienes mensajes de miembros sin leer esperando."
+      },
+      "breathe": {
+        "label": "Sesenta segundos",
+        "title": "Respira",
+        "text": "Una respiración en la puerta del puerto. Quédate todo el tiempo que quieras."
+      },
+      "library": {
+        "label": "Leer",
+        "title": "La Biblioteca",
+        "text": "Piezas largas del equipo. El pensamiento al que el puerto regresa, escrito en la voz de alguien que sabe."
+      },
+      "resources": {
+        "label": "Curado",
+        "title": "Recursos",
+        "text": "Lectura externa que el equipo leyó primero — libros, ensayos, charlas que vale la pena llevar contigo entre sesiones."
+      }
+    },
+    "patience": "El puerto estará aquí mañana.",
+    "roadmap": {
+      "eyebrow": "Tu Mapa De Ruta",
+      "title": "Continúa donde lo dejaste.",
+      "loading": "Cargando tu mapa de ruta…",
+      "noSteps": "Aún no hay pasos en el camino de {stage}. Vuelve pronto.",
+      "notStarted": "Aún no has empezado el camino de {stage}. Empieza con:",
+      "completed": "Has completado el camino de {stage}. Es hora de fijar la siguiente intención.",
+      "progressPrefix": "Vas",
+      "progressPercent": "{percent}% del",
+      "progressSuffix": "camino de {stage}. Siguiente:",
+      "cta": "Continuar Tu Camino"
+    },
+    "notification": {
+      "fallbackEyebrow": "Aviso",
+      "fallbackHeadline": "Algo llegó.",
+      "dismiss": "Descartar",
+      "solidarity": {
+        "eyebrow": "Hermanos Están Contigo",
+        "headline1": "1 hermano está contigo en esa publicación.",
+        "body1": "Alguien leyó lo que escribiste y dejó el ancla a tu lado. No eres el único en esto.",
+        "headline5": "5 hermanos están contigo.",
+        "body5": "Cinco hombres lo vieron. Cinco hombres respondieron con su presencia silenciosa.",
+        "headline25": "25 hermanos están contigo.",
+        "body25": "Escribiste algo valiente hoy. Veinticinco hombres lo sintieron lo suficiente para decirlo sin palabras.",
+        "headline50": "50 hermanos están contigo.",
+        "body50": "Cincuenta hombres dejaron el ancla a tu lado. El puerto no es una metáfora en este momento.",
+        "headline100": "100 hermanos están contigo.",
+        "body100": "Cien hombres. Ese número no es nada. Lo que sea que escribiste, llegó.",
+        "headlineN": "{count} hermanos están contigo.",
+        "bodyN": "Tu publicación está siendo sostenida."
+      },
+      "summary": {
+        "eyebrow": "Ayer",
+        "headline1": "1 hermano estuvo contigo el {date}.",
+        "headlineN": "{count} hermanos estuvieron contigo el {date}.",
+        "body": "Pensamos que deberías saberlo — en silencio. El puerto sostenía lo que escribiste.",
+        "fallbackDate": "ayer"
+      },
+      "warning": {
+        "eyebrow": "Importante",
+        "headline": "Hay una nota de moderación en tu cuenta.",
+        "body": "Por favor revisa la advertencia en la configuración de tu perfil. Si crees que es un error, puedes apelar."
+      },
+      "suspension": {
+        "eyebrow": "Bienvenido De Regreso",
+        "headline": "Tu cuenta está activa de nuevo.",
+        "body": "Nos alegra que estés aquí. El puerto está abierto."
+      }
+    },
+    "withYou": {
+      "yourPost": "Tu Publicación",
+      "withTitle": "Estás con él. Toca para levantar el ancla.",
+      "withoutTitle": "Estoy contigo, hermano. Deja el ancla a su lado.",
+      "withLabel": "Con Él",
+      "withoutLabel": "Estoy Contigo",
+      "posterCount1": "1 hermano está contigo.",
+      "posterCountN": "{count} hermanos están contigo.",
+      "viewerCount1": "1 con él",
+      "viewerCountN": "{count} con él"
+    },
+    "personalizedGreeting": {
+      "fallbackName": "amigo",
+      "defaultSalutation": "Bienvenido.",
+      "defaultBody": "El puerto es paciente.",
+      "ariaLabel": "Bienvenido",
+      "firstVisit": {
+        "lateNightSalutation": "Es tarde, {name}.",
+        "lateNightBody": "El puerto está aquí. Tómate tu tiempo.",
+        "salutation": "{greeting}, {name}.",
+        "body": "El puerto te recuerda. No le debes nada a nadie hoy."
+      },
+      "longGone": {
+        "salutation": "Bienvenido de regreso, {name}.",
+        "body": "Fuimos pacientes. Empieza donde estás — no donde lo dejaste."
+      },
+      "fewDays": {
+        "salutation": "Bienvenido de regreso, {name}.",
+        "body": "Han pasado unos días desde tu última visita. Lo que sea que pasó en medio — eres bienvenido a volver."
+      },
+      "recent": {
+        "lateNightSalutation": "Es tarde, {name}.",
+        "lateNightBody": "El puerto está aquí.",
+        "salutation": "{greeting}, {name}.",
+        "body": "Qué bueno verte de nuevo."
+      },
+      "greetings": {
+        "morning": "Buenos días",
+        "afternoon": "Buenas tardes",
+        "evening": "Buenas noches"
+      }
+    },
+    "todayIntention": {
+      "eyebrow": "Hoy",
+      "prompts": {
+        "0": "¿Qué necesita tu atención hoy?",
+        "1": "¿Qué se sentiría como progreso?",
+        "2": "¿Qué se sentiría como descanso?"
+      },
+      "ariaLabel": "Intención de hoy",
+      "inputAriaLabel": "Establece una intención para hoy (opcional)"
+    },
+    "storyCard": {
+      "eyebrow": "Una Historia Para Contar",
+      "estMinutes": "Unos {minutes} minutos",
+      "writeStory": "Escribir esta historia",
+      "notToday": "Hoy no",
+      "oneMoment": "Un momento…"
+    }
   },
   "journal": {
     "loading": "Abriendo tu diario…",
