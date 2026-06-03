@@ -6,7 +6,7 @@ import {
   advanceModule,
   evaluateSafety,
   type InstrumentId,
-} from "@/lib/eidos";
+} from "@stone-harbor/eidos";
 
 /**
  * POST /api/map/respond

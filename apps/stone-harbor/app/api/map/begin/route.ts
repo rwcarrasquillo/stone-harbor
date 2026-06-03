@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser, serviceClient, err } from "../_helpers";
-import { initSession } from "@/lib/eidos";
+import { initSession } from "@stone-harbor/eidos";
 
 /**
  * POST /api/map/begin

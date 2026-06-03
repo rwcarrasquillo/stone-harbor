@@ -6,7 +6,7 @@ import { useLocale } from "next-intl";
 import { supabase } from "@/lib/supabaseClient";
 import { PageAmbience } from "@/app/components/pageAmbience";
 import { ModuleRenderer, type ModuleScaleOption } from "../../ModuleRenderer";
-import { bfi10, schwartz, bpnsfs12, phq2gad2 } from "@/lib/eidos";
+import { bfi10, schwartz, bpnsfs12, phq2gad2 } from "@stone-harbor/eidos";
 
 /**
  * Stone Harbor — /map/week/[n].

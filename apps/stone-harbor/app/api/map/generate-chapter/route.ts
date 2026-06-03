@@ -6,7 +6,7 @@ import {
   type Bfi10Scores,
   type SchwartzScores,
   type BpnsfsScores,
-} from "@/lib/eidos";
+} from "@stone-harbor/eidos";
 import { retrieveChunks, formatChunksForPrompt } from "@/lib/knowledge";
 
 /**

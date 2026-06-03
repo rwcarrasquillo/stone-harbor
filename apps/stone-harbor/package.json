@@ -16,6 +16,7 @@
     "test:all:report": "node scripts/run-all-tests.mjs"
   },
   "dependencies": {
+    "@stone-harbor/eidos": "workspace:*",
     "@parcel/watcher": "^2.5.6",
     "@sentry/nextjs": "^10.56.0",
     "@supabase/supabase-js": "^2.105.4",

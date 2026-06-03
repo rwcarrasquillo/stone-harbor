@@ -19,11 +19,9 @@ export default defineConfig({
     environment: "happy-dom",
     include: [
       "tests/unit/**/*.test.ts",
-      // Eidos engine tests live colocated with the engine code so
-      // they travel with the engine if it's ever extracted into a
-      // separate package. Adding the glob here keeps them in the
-      // existing unit-test run.
-      "lib/eidos/__tests__/**/*.test.ts",
+      // Eidos engine tests now live in packages/eidos and run under that
+      // package's own vitest config (via `turbo test`), traveling with the
+      // engine as intended when it was extracted in Phase 0.
     ],
     reporters: ["default", "json"],
     outputFile: { json: ".test-results/unit.json" },
