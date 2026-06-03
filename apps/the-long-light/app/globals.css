@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root,
+[data-theme="long-light"] {
+  /* Hearth palette */
+  --background-base: #F5EFE6;
+  --background-recessed: #EFE8DD;
+  --primary: #5B3A53;
+  --secondary: #7A8B6C;
+  --accent-base: #A8794C;
+  --accent-long-light: #D4A574;
+  --text-primary: #2C1F25;
+  --text-secondary: #5A4750;
+  --danger: #A04C3E;
+
+  /* Long Light specific - golden hour band */
+  --long-light-glow: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(212, 165, 116, 0.12) 70%,
+    rgba(212, 165, 116, 0.18) 100%
+  );
+}
+
+@theme inline {
+  --color-background-base: var(--background-base);
+  --color-background-recessed: var(--background-recessed);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent-base);
+  --color-honey: var(--accent-long-light);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-danger: var(--danger);
+  --font-serif: ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  background: var(--background-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+  color: var(--primary);
+  letter-spacing: -0.01em;
+}
