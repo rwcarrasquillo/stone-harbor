@@ -111,7 +111,10 @@ export default function FounderStoryPromptsPage() {
           .order("order_hint", { ascending: true }),
         supabase
           .from("member_story_invitations")
-          .select("prompt_id, status, telemetry"),
+          // Defense-in-depth: aggregate Stone Harbor invitations only
+          // (M5 RLS also enforces this for an SH-consumer founder session).
+          .select("prompt_id, status, telemetry")
+          .eq("consumer", "stone_harbor"),
       ]);
 
       if (cancelled) return;

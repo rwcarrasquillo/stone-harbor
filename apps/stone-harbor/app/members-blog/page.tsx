@@ -564,6 +564,8 @@ export default function NewMembersBlogPage() {
           "id, title, excerpt, summary, content, pillar, published_at, created_at",
         )
         .eq("is_published", true)
+        // Defense-in-depth: Stone Harbor blog only (M5 RLS also enforces).
+        .eq("consumer", "stone_harbor")
         .order("published_at", { ascending: false, nullsFirst: false }),
       supabase
         .from("external_content")

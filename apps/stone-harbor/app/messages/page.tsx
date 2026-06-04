@@ -175,6 +175,8 @@ export default function MessagesPage() {
       .from("conversations")
       .select("id, title, updated_at")
       .in("id", conversationIds)
+      // Defense-in-depth: Stone Harbor conversations only (M5 RLS also enforces).
+      .eq("consumer", "stone_harbor")
       .order("updated_at", { ascending: false });
     if (conversationError) {
       console.error("Could not load conversations:", conversationError.message);
@@ -183,7 +185,9 @@ export default function MessagesPage() {
     const { data: memberRows, error: memberError } = await supabase
       .from("conversation_members")
       .select("conversation_id, user_id")
-      .in("conversation_id", conversationIds);
+      .in("conversation_id", conversationIds)
+      // Defense-in-depth: Stone Harbor membership rows only.
+      .eq("consumer", "stone_harbor");
     if (memberError) {
       console.error(
         "Could not load conversation members:",
@@ -201,7 +205,9 @@ export default function MessagesPage() {
       const { data, error } = await supabase
         .from("profiles")
         .select("id, email, display_name, username, avatar_url")
-        .in("id", uniqueOtherUserIds);
+        .in("id", uniqueOtherUserIds)
+        // Defense-in-depth: only resolve Stone Harbor member profiles.
+        .eq("consumer", "stone_harbor");
       if (error) {
         console.error("Could not load profiles:", error.message);
       }
@@ -212,6 +218,8 @@ export default function MessagesPage() {
       .select("conversation_id, body, created_at")
       .in("conversation_id", conversationIds)
       .is("deleted_at", null)
+      // Defense-in-depth: Stone Harbor messages only (M5 RLS also enforces).
+      .eq("consumer", "stone_harbor")
       .order("created_at", { ascending: false })
       .limit(100);
     if (recentMessageError) {
@@ -270,6 +278,8 @@ export default function MessagesPage() {
       .select("id, conversation_id, sender_id, body, created_at")
       .eq("conversation_id", conversationId)
       .is("deleted_at", null)
+      // Defense-in-depth: Stone Harbor messages only (M5 RLS also enforces).
+      .eq("consumer", "stone_harbor")
       .order("created_at", { ascending: true });
     if (error) {
       console.error("Could not load messages:", error.message);
@@ -299,6 +309,8 @@ export default function MessagesPage() {
         `display_name.ilike.%${safeQuery}%,username.ilike.%${safeQuery}%,email.ilike.%${safeQuery}%`,
       )
       .neq("id", userId)
+      // Defense-in-depth: member search returns Stone Harbor members only.
+      .eq("consumer", "stone_harbor")
       .limit(10);
     if (error) {
       console.error("Member search failed:", error.message);

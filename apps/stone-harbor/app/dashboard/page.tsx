@@ -277,6 +277,8 @@ export default function DashboardPage() {
       .from("member_posts")
       .select("id, user_id, body, privacy_level, created_at")
       .is("deleted_at", null)
+      // Defense-in-depth: Stone Harbor timeline only (M5 RLS also enforces).
+      .eq("consumer", "stone_harbor")
       .order("created_at", { ascending: false })
       .limit(25);
 
@@ -297,7 +299,9 @@ export default function DashboardPage() {
     const { data: profilesData, error: profilesError } = await supabase
       .from("profiles")
       .select("id, display_name, username, avatar_url")
-      .in("id", userIds);
+      .in("id", userIds)
+      // Defense-in-depth: only resolve Stone Harbor author profiles.
+      .eq("consumer", "stone_harbor");
 
     if (profilesError) {
       console.error("Could not load post authors:", profilesError.message);

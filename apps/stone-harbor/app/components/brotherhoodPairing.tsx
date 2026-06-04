@@ -93,6 +93,8 @@ export function BrotherhoodPairing({ userId }: Props) {
       )
       .or(`user_a_id.eq.${userId},user_b_id.eq.${userId}`)
       .eq("status", "active")
+      // Defense-in-depth: pin to Stone Harbor (M5 RLS also enforces this).
+      .eq("consumer", "stone_harbor")
       .maybeSingle();
 
     if (pairing) {
@@ -117,6 +119,8 @@ export function BrotherhoodPairing({ userId }: Props) {
         .from("profiles")
         .select("display_name, username")
         .eq("id", partnerId)
+        // Defense-in-depth: only resolve a Stone Harbor partner profile.
+        .eq("consumer", "stone_harbor")
         .maybeSingle();
 
       setState({

@@ -25,6 +25,14 @@ export default function SignupPage() {
       email,
       password,
       options: {
+        // Phase 2 consumer-aware signup: this lands in
+        // auth.users.raw_user_meta_data->>'consumer', which the
+        // enforce_registration_open() and handle_new_user() triggers read to
+        // gate against the long_light row of consumer_settings and to stamp
+        // profiles.consumer = 'long_light' (healing_stage NULL).
+        data: {
+          consumer: "long_light",
+        },
         emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
