@@ -849,5 +849,90 @@
     "aria": {
       "back": "Back to dashboard"
     }
+  },
+  "settleIn": {
+    "skip": "Skip settle-in",
+    "revisit": "Revisit settle-in",
+    "anchorLabel": "Stone Harbor",
+    "screen1": {
+      "lines": [
+        "You're here now.",
+        "Breathe and let the noise fall back.",
+        "Nothing is demanding more from you in this moment — there's no need to prove anything, no need to hurry.",
+        "If you want, follow the breath circle for a minute. If not, let it pass.",
+        "Step forward when you're ready. The next screen will be waiting."
+      ],
+      "cta": "Step forward →"
+    },
+    "screen2": {
+      "lines": [
+        "There are four doors. Take any one. Start where you want.",
+        "None comes first. None is more important. None will be the wrong one.",
+        "Each gives you a different way. You'll find what you need."
+      ],
+      "cards": {
+        "reflect": {
+          "title": "Reflect",
+          "body": "Where you write to yourself. Whatever wants to be said. The words stay."
+        },
+        "vent": {
+          "title": "Vent",
+          "body": "For words that don't need to be kept. Write them. Let them go. Nothing is saved unless you want it."
+        },
+        "brotherhood": {
+          "title": "Brotherhood",
+          "body": "Another man, paired with you when you're ready. You speak at your own pace. This door opens at Day 120."
+        },
+        "breathe": {
+          "title": "Breathe",
+          "body": "A breath circle. One minute. For days when the body needs settling first."
+        }
+      },
+      "footer": "You don't have to remember any of this. The doors will be there.",
+      "cta": "Continue →"
+    },
+    "screen3": {
+      "lines": [
+        "There's also a Map.",
+        "A few short questions — about your personality, your values, your needs — become your Operating Manual.",
+        "Written for you. It's yours.",
+        "You can read it whenever. Return to it over time. Or never open it.",
+        "The Map will wait."
+      ],
+      "cta": "Continue →"
+    },
+    "screen4": {
+      "lines": [
+        "We don't chase.",
+        "No push notifications. No daily reminders. No streaks. No “we miss you” emails.",
+        "The harbor remains.",
+        "Quiet.",
+        "Unmoved.",
+        "Return in your own time — tomorrow or months from now.",
+        "Nothing here asks more of you, and nothing is lost while you're away."
+      ],
+      "pauseIndices": [
+        3,
+        4
+      ],
+      "cta": "Continue →"
+    },
+    "screen5": {
+      "opener": "Before you step in.",
+      "conditional": "If tonight is harder than it should be:",
+      "crisis": [
+        {
+          "number": "988",
+          "rest": " — call or text. Suicide & Crisis Lifeline. Around the clock."
+        },
+        {
+          "number": "741741",
+          "rest": " — text HOME. Crisis Text Line."
+        }
+      ],
+      "persistence": "These will be at the bottom of every page. You don't have to remember where they are.",
+      "transition": "When you're ready —",
+      "enter": "Step into the harbor →"
+    }
   }
 }
