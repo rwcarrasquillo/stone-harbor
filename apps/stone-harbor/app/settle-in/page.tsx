@@ -199,7 +199,9 @@ function SettleInFlow() {
     );
   }, [isFirstPass, userId, reduced]);
 
-  const bodyClass = `${serif.className} text-xl leading-relaxed text-[var(--sh-text-primary)] md:text-2xl`;
+  // text-balance distributes prose evenly across lines, killing the
+  // single-word orphan on the last line of multi-line body copy.
+  const bodyClass = `${serif.className} text-balance text-xl leading-relaxed text-[var(--sh-text-primary)] md:text-2xl`;
   const ctaClass = `${sans.className} mt-10 inline-block text-sm uppercase tracking-[0.2em] text-[var(--sh-accent-gold)] underline-offset-4 transition hover:underline`;
 
   const screenContent = useMemo(() => renderScreen(), [step, reduced, t]);
@@ -249,7 +251,7 @@ function SettleInFlow() {
                     {t(`screen2.cards.${key}.title`)}
                   </h3>
                   <p
-                    className={`${sans.className} mt-2 text-sm leading-relaxed text-[var(--sh-text-secondary)]`}
+                    className={`${sans.className} mt-2 text-balance text-sm leading-relaxed text-[var(--sh-text-secondary)]`}
                   >
                     {t(`screen2.cards.${key}.body`)}
                   </p>
@@ -257,7 +259,7 @@ function SettleInFlow() {
               ))}
             </div>
             <p
-              className={`${serif.className} mx-auto mt-8 max-w-xl text-base italic leading-relaxed text-[var(--sh-text-secondary)]`}
+              className={`${serif.className} mx-auto mt-8 max-w-xl text-balance text-base italic leading-relaxed text-[var(--sh-text-secondary)]`}
             >
               {t("screen2.footer")}
             </p>
@@ -305,7 +307,7 @@ function SettleInFlow() {
             >
               <p className={`${bodyClass} mb-8`}>{t("screen5.opener")}</p>
               <p
-                className={`${sans.className} mb-4 text-base text-[var(--sh-text-secondary)]`}
+                className={`${sans.className} mb-4 text-balance text-base text-[var(--sh-text-secondary)]`}
               >
                 {t("screen5.conditional")}
               </p>
@@ -321,12 +323,12 @@ function SettleInFlow() {
                 ))}
               </div>
               <p
-                className={`${sans.className} mx-auto mb-12 max-w-md text-sm leading-relaxed text-[var(--sh-text-tertiary)]`}
+                className={`${sans.className} mx-auto mb-12 max-w-md text-balance text-sm leading-relaxed text-[var(--sh-text-tertiary)]`}
               >
                 {t("screen5.persistence")}
               </p>
               <p
-                className={`${serif.className} mb-6 text-base italic text-[var(--sh-text-secondary)]`}
+                className={`${serif.className} mb-6 text-balance text-base italic text-[var(--sh-text-secondary)]`}
               >
                 {t("screen5.transition")}
               </p>
