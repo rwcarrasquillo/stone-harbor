@@ -849,5 +849,90 @@
     "aria": {
       "back": "Volver al panel"
     }
+  },
+  "settleIn": {
+    "skip": "Saltar esta introducción",
+    "revisit": "Volver a la introducción",
+    "anchorLabel": "Stone Harbor",
+    "screen1": {
+      "lines": [
+        "Ya estás aquí.",
+        "Respira y deja que el ruido retroceda.",
+        "Nada te exige más en este momento — no hay nada que demostrar, no hay prisa.",
+        "Si quieres, sigue el círculo de respiración por un minuto. Si no, déjalo pasar.",
+        "Da el paso cuando estés listo. La siguiente pantalla estará esperando."
+      ],
+      "cta": "Da el paso →"
+    },
+    "screen2": {
+      "lines": [
+        "Hay cuatro puertas. Toma cualquiera. Empieza donde quieras.",
+        "Ninguna va primero. Ninguna es más importante. Ninguna será la equivocada.",
+        "Cada una te da un camino distinto. Encontrarás lo que necesitas."
+      ],
+      "cards": {
+        "reflect": {
+          "title": "Reflexionar",
+          "body": "Donde escribes para ti mismo. Lo que quiera ser dicho. Las palabras se quedan."
+        },
+        "vent": {
+          "title": "Desahogo",
+          "body": "Para las palabras que no hace falta guardar. Escríbelas. Déjalas ir. No se guarda nada a menos que tú quieras."
+        },
+        "brotherhood": {
+          "title": "Hermandad",
+          "body": "Otro hombre, emparejado contigo cuando estés listo. Hablas a tu propio ritmo. Esta puerta se abre en el Día 120."
+        },
+        "breathe": {
+          "title": "Respirar",
+          "body": "Un círculo de respiración. Un minuto. Para los días en que el cuerpo necesita asentarse primero."
+        }
+      },
+      "footer": "No tienes que recordar nada de esto. Las puertas estarán ahí.",
+      "cta": "Continuar →"
+    },
+    "screen3": {
+      "lines": [
+        "También hay un Mapa.",
+        "Unas pocas preguntas breves — sobre tu personalidad, tus valores, tus necesidades — se convierten en tu Manual de Operación.",
+        "Escrito para ti. Es tuyo.",
+        "Puedes leerlo cuando quieras. Vuelve a él con el tiempo. O nunca lo abras.",
+        "El Mapa esperará."
+      ],
+      "cta": "Continuar →"
+    },
+    "screen4": {
+      "lines": [
+        "No te perseguimos.",
+        "Sin notificaciones. Sin recordatorios diarios. Sin rachas. Sin correos de “te extrañamos”.",
+        "El refugio permanece.",
+        "Tranquilo.",
+        "Inmóvil.",
+        "Vuelve en tu propio tiempo — mañana o dentro de meses.",
+        "Nada aquí te pide más, y nada se pierde mientras estás lejos."
+      ],
+      "pauseIndices": [
+        3,
+        4
+      ],
+      "cta": "Continuar →"
+    },
+    "screen5": {
+      "opener": "Antes de entrar.",
+      "conditional": "Si esta noche es más difícil de lo que debería:",
+      "crisis": [
+        {
+          "number": "988",
+          "rest": " — llama o envía un mensaje. Línea de Prevención del Suicidio y Crisis. A toda hora."
+        },
+        {
+          "number": "741741",
+          "rest": " — envía HOME por mensaje de texto. Crisis Text Line."
+        }
+      ],
+      "persistence": "Estos estarán al pie de cada página. No tienes que recordar dónde están.",
+      "transition": "Cuando estés listo —",
+      "enter": "Entra al refugio →"
+    }
   }
 }
