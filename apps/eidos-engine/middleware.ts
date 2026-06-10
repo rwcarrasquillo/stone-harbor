@@ -2,64 +2,65 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 /**
- * Eidos Engine — admin Basic-Auth middleware (EID-21).
+ * Eidos Engine — admin session middleware (EID-21).
  *
- * Gates every request under `/admin/*` with HTTP Basic Auth against the
- * EIDOS_ADMIN_TOKEN env var. The browser handles credential prompting
- * and caching natively — no login UI to maintain, no cookies to manage,
- * no sessions to expire. Suits an internal-only single-admin surface
- * (Rafael today, eventual clinical advisor later).
+ * Gates every request under `/admin/*` except `/admin/login` itself,
+ * by checking an HttpOnly cookie set by the login route. No browser
+ * Basic Auth prompt — a real Eidos-branded login page lives at
+ * `/admin/login`. Same token-based credential model.
  *
- * Auth format: `Authorization: Basic <base64(username:password)>`.
- * Username is ignored; password is compared against `EIDOS_ADMIN_TOKEN`.
- * Wrong/missing creds → 401 with `WWW-Authenticate: Basic realm="Eidos Admin"`
- * so the browser re-prompts.
+ * Cookie name: `eidos_admin_session`. Value: literal admin token.
+ * The middleware compares cookie value → EIDOS_ADMIN_TOKEN env var.
  *
- * Runs in the Edge runtime; `atob` is available there.
+ * Missing/invalid cookie on a protected `/admin/*` URL → 303 redirect
+ * to `/admin/login?next=<original_path>` so post-login lands the user
+ * where they were going. The login API route does its own validation.
+ *
+ * API routes /api/admin/login and /api/admin/logout are intentionally
+ * NOT covered by this matcher — they own their own logic (validate-
+ * and-set-cookie / clear-cookie). Including them here would block the
+ * login flow from ever running.
  */
+
+const COOKIE_NAME = "eidos_admin_session";
+
 export function middleware(req: NextRequest) {
-  if (!req.nextUrl.pathname.startsWith("/admin")) {
+  const { pathname, search } = req.nextUrl;
+
+  if (!pathname.startsWith("/admin")) {
+    return NextResponse.next();
+  }
+
+  // Let the login page through without auth — otherwise the user can
+  // never see it to authenticate.
+  if (pathname === "/admin/login" || pathname.startsWith("/admin/login/")) {
     return NextResponse.next();
   }
 
   const adminToken = process.env.EIDOS_ADMIN_TOKEN;
   if (!adminToken) {
-    // Misconfiguration — fail loud so it surfaces in logs. Don't return
-    // 401 here, because that would prompt the browser indefinitely for
-    // a credential that can never succeed.
-    return new NextResponse(
-      "EIDOS_ADMIN_TOKEN is not configured on this deployment.",
-      { status: 500 },
+    // Misconfiguration — surface to the login page so the operator
+    // sees the "unconfigured" banner rather than an opaque 500.
+    return NextResponse.redirect(
+      new URL("/admin/login?error=unconfigured", req.url),
+      { status: 303 },
     );
   }
 
-  const auth = req.headers.get("authorization");
-  const match = auth?.match(/^Basic (.+)$/);
-  if (match) {
-    try {
-      const decoded = atob(match[1]);
-      // The colon splits username from password. We don't care which
-      // username the operator types — any non-empty pair works.
-      const colonIdx = decoded.indexOf(":");
-      const password = colonIdx >= 0 ? decoded.slice(colonIdx + 1) : "";
-      if (password === adminToken) {
-        return NextResponse.next();
-      }
-    } catch {
-      // Malformed base64 — falls through to 401 below.
-    }
+  const cookie = req.cookies.get(COOKIE_NAME)?.value;
+  if (cookie && cookie === adminToken) {
+    return NextResponse.next();
   }
 
-  return new NextResponse("Authentication required.", {
-    status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Eidos Admin"' },
-  });
+  // Preserve where the user was going. Strip the host — `next` is an
+  // internal path only (the login API + page both re-sanitise).
+  const nextParam = encodeURIComponent(`${pathname}${search}`);
+  return NextResponse.redirect(
+    new URL(`/admin/login?next=${nextParam}`, req.url),
+    { status: 303 },
+  );
 }
 
-/**
- * Limit the middleware to /admin/* — every other route (API ingestion,
- * cron, root health) is unchanged and untouched.
- */
 export const config = {
   matcher: ["/admin/:path*"],
 };

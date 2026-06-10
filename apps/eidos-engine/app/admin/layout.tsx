@@ -1,41 +1,16 @@
 import type { ReactNode } from "react";
 
 /**
- * Eidos Engine — admin layout (EID-21).
+ * Eidos Engine — /admin layout (EID-21).
  *
- * Shared chrome for every page under /admin. Header strip with a
- * back-link to the events index. No login/logout UI — Basic Auth is
- * managed by the browser; closing the tab clears the cached
- * credentials in most browsers.
+ * Pass-through wrapper. The login page and the protected pages each
+ * own their own chrome (via app/admin/(protected)/layout.tsx for the
+ * authed surfaces, and a standalone main element on /admin/login).
  *
- * Plain inline styles, no Tailwind, matching the root layout. Admin
- * surface is internal-only — Rafael today, eventual clinical advisor
- * later — and the visual cost is "useful, not pretty."
+ * Kept as an explicit file rather than deleted because the Linux sandbox
+ * the build was scaffolded in can't remove files on the mounted volume.
+ * Pass-through has no runtime cost.
  */
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ minHeight: "100vh" }}>
-      <header
-        style={{
-          padding: "1rem 2rem",
-          borderBottom: "1px solid #1f2128",
-          display: "flex",
-          alignItems: "center",
-          gap: "1.5rem",
-          fontSize: "0.85rem",
-        }}
-      >
-        <strong style={{ fontWeight: 600 }}>Eidos Admin</strong>
-        <a href="/admin/events" style={{ color: "#7aa2f7" }}>
-          Events index
-        </a>
-        <span style={{ marginLeft: "auto", opacity: 0.6 }}>
-          internal · service surface
-        </span>
-      </header>
-      <main style={{ padding: "2rem", maxWidth: 1100, margin: "0 auto" }}>
-        {children}
-      </main>
-    </div>
-  );
+  return <>{children}</>;
 }
