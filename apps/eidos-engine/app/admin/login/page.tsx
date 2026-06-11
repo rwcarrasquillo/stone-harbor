@@ -49,30 +49,38 @@ export default async function LoginPage({
           background: "#0e1015",
         }}
       >
-        <header style={{ marginBottom: "1.5rem" }}>
+        <header style={{ marginBottom: "1.75rem" }}>
           <div
             style={{
-              fontSize: "0.7rem",
-              opacity: 0.55,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-              marginBottom: "0.35rem",
+              display: "flex",
+              justifyContent: "center",
+              marginBottom: "0.6rem",
             }}
           >
-            Eidos Engine
+            <EidosHorizonMark />
           </div>
-          <h1 style={{ fontSize: "1rem", margin: 0, fontWeight: 600 }}>
+          <h1
+            style={{
+              fontSize: "0.85rem",
+              margin: 0,
+              fontWeight: 500,
+              textAlign: "center",
+              opacity: 0.75,
+              letterSpacing: "0.02em",
+            }}
+          >
             Admin sign in
           </h1>
           <p
             style={{
-              opacity: 0.55,
-              fontSize: "0.8rem",
-              marginTop: "0.5rem",
+              opacity: 0.5,
+              fontSize: "0.75rem",
+              marginTop: "0.4rem",
               lineHeight: 1.5,
+              textAlign: "center",
             }}
           >
-            Internal-only validation surface. Enter your admin token.
+            Internal-only validation surface.
           </p>
         </header>
 
@@ -181,6 +189,72 @@ function sanitizeNext(next: string | undefined): string {
   if (!next.startsWith("/admin")) return "/admin/events";
   if (next.startsWith("/admin/login")) return "/admin/events";
   return next;
+}
+
+/**
+ * Compact horizon mark for the login card. ViewBox 540×180 is shaped
+ * for the 380px-wide card; `vector-effect="non-scaling-stroke"` keeps
+ * the ring and the line at a consistent visual weight at any display
+ * size. Inner circle fill matches the card background (#0e1015) so
+ * the ring's interior blends with the card.
+ */
+function EidosHorizonMark() {
+  return (
+    <svg
+      width="300"
+      viewBox="0 0 540 180"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-label="Eidos"
+      role="img"
+    >
+      <defs>
+        <radialGradient id="login_halo_outer" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#d8e6f4" stopOpacity="0.45" />
+          <stop offset="55%" stopColor="#8aabcb" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#2c4868" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="login_halo_inner" cx="40%" cy="34%" r="58%">
+          <stop offset="0%" stopColor="#f5faff" stopOpacity="1" />
+          <stop offset="42%" stopColor="#b3cee8" stopOpacity="0.7" />
+          <stop offset="80%" stopColor="#5d80a2" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#2c4868" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="120" cy="90" r="110" fill="url(#login_halo_outer)" />
+      <circle cx="120" cy="90" r="70" fill="url(#login_halo_inner)" />
+      <circle cx="120" cy="90" r="44" fill="#0e1015" />
+      <circle
+        cx="120"
+        cy="90"
+        r="44"
+        fill="none"
+        stroke="#f5faff"
+        strokeWidth="1.5"
+        vectorEffect="non-scaling-stroke"
+      />
+      <line
+        x1="10"
+        y1="90"
+        x2="530"
+        y2="90"
+        stroke="#ffffff"
+        strokeWidth="1"
+        strokeOpacity="0.9"
+        vectorEffect="non-scaling-stroke"
+      />
+      <text
+        x="210"
+        y="90"
+        fontFamily="'Avenir Next', Avenir, 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif"
+        fontSize="36"
+        fontWeight="300"
+        letterSpacing="5"
+        fill="#ffffff"
+      >
+        eidos
+      </text>
+    </svg>
+  );
 }
 
 function Banner({

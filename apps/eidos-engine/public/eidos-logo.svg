@@ -1,0 +1,22 @@
+<svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="halo_outer" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d8e6f4" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#8aabcb" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#2c4868" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo_inner" cx="40%" cy="34%" r="58%">
+      <stop offset="0%" stop-color="#f5faff" stop-opacity="1"/>
+      <stop offset="42%" stop-color="#b3cee8" stop-opacity="0.7"/>
+      <stop offset="80%" stop-color="#5d80a2" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#2c4868" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="680" height="300" fill="#000000"/>
+  <circle cx="200" cy="150" r="120" fill="url(#halo_outer)"/>
+  <circle cx="200" cy="150" r="80" fill="url(#halo_inner)"/>
+  <circle cx="200" cy="150" r="50" fill="#000000"/>
+  <circle cx="200" cy="150" r="50" fill="none" stroke="#f5faff" stroke-width="1.6" stroke-opacity="0.95"/>
+  <line x1="20" y1="150" x2="660" y2="150" stroke="#ffffff" stroke-width="1" stroke-opacity="0.92"/>
+  <text x="300" y="150" font-family="'Avenir Next', Avenir, 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif" font-size="46" font-weight="300" letter-spacing="7" fill="#ffffff">eidos</text>
+</svg>

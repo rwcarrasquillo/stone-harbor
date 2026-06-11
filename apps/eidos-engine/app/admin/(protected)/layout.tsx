@@ -29,7 +29,10 @@ export default function ProtectedAdminLayout({
           fontSize: "0.85rem",
         }}
       >
-        <strong style={{ fontWeight: 600 }}>Eidos Admin</strong>
+        <span style={{ display: "flex", alignItems: "center", gap: "0.55rem" }}>
+          <EidosMarkSmall />
+          <strong style={{ fontWeight: 600 }}>Eidos Admin</strong>
+        </span>
         <a href="/admin/events" style={{ color: "#7aa2f7" }}>
           Events index
         </a>
@@ -58,5 +61,49 @@ export default function ProtectedAdminLayout({
         {children}
       </main>
     </div>
+  );
+}
+
+/**
+ * Small square mark for the admin header strip. Same orb as the
+ * favicon (app/icon.svg) but inlined so it renders without an extra
+ * HTTP request and stays crisp at 20px.
+ */
+function EidosMarkSmall() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 32 32"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="header_mark" cx="40%" cy="34%" r="55%">
+          <stop offset="0%" stopColor="#f5faff" stopOpacity="1" />
+          <stop offset="60%" stopColor="#a8c4e0" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#1a2c44" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="16" cy="16" r="14" fill="url(#header_mark)" />
+      <circle cx="16" cy="16" r="9" fill="#0b0c10" />
+      <circle
+        cx="16"
+        cy="16"
+        r="9"
+        fill="none"
+        stroke="#f5faff"
+        strokeWidth="1.2"
+      />
+      <line
+        x1="6"
+        y1="16"
+        x2="26"
+        y2="16"
+        stroke="#f5faff"
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
