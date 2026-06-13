@@ -95,6 +95,24 @@ async function call<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
+async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const { url, token } = assertConfigured();
+  const res = await fetch(`${url}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "<unreadable>");
+    throw new Error(`Engine returned ${res.status}: ${detail}`);
+  }
+  return (await res.json()) as T;
+}
+
 export async function listMembers(): Promise<{ members: MemberSummary[] }> {
   return call<{ members: MemberSummary[] }>("/api/v1/members");
 }
@@ -106,4 +124,45 @@ export async function getMember(
   return call<MemberDetail>(
     `/api/v1/members/${encodeURIComponent(consumerId)}/${encodeURIComponent(userId)}`,
   );
+}
+
+// ---------------------------------------------------------------------------
+// System secrets rotation surface (EID-53)
+// ---------------------------------------------------------------------------
+
+export interface SystemSecretRow {
+  id: string;
+  key: string;
+  label: string;
+  category: string;
+  description: string | null;
+  rotation_interval_days: number;
+  last_rotated_at: string | null;
+  last_rotated_by: string | null;
+  notes: string | null;
+  is_critical: boolean;
+  created_at: string;
+  updated_at: string;
+  // Derived server-side so the UI doesn't have to re-compute on every
+  // render (matches the SH admin /security enrichment shape).
+  days_since_rotation: number | null;
+  overdue: boolean;
+}
+
+export async function listSystemSecrets(): Promise<{
+  secrets: SystemSecretRow[];
+}> {
+  return call<{ secrets: SystemSecretRow[] }>("/api/v1/admin/secrets");
+}
+
+export async function markSecretRotated(
+  id: string,
+  notes?: string,
+): Promise<{ ok: true; secret: { id: string; key: string; last_rotated_at: string } }> {
+  return post<{
+    ok: true;
+    secret: { id: string; key: string; last_rotated_at: string };
+  }>(`/api/v1/admin/secrets/${encodeURIComponent(id)}/mark-rotated`, {
+    notes,
+  });
 }

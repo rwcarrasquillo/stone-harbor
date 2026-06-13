@@ -27,6 +27,9 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <a href="/" style={{ color: "#7aa2f7" }}>
           Events index
         </a>
+        <a href="/security" style={{ color: "#7aa2f7" }}>
+          Security
+        </a>
         <span style={{ marginLeft: "auto", opacity: 0.6 }}>
           internal · validation surface
         </span>
